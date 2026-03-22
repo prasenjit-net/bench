@@ -21,6 +21,13 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // ── report subcommand ──────────────────────────────────────────────────────
+    if let Command::Report { file } = args.command {
+        let path = std::path::PathBuf::from(file);
+        editor::run_report_viewer(path).await?;
+        return Ok(());
+    }
+
     // ── run subcommand (default) ───────────────────────────────────────────────
     let cfg = args.into_run_config()?;
 

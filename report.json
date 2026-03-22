@@ -1,0 +1,890 @@
+{
+  "generated_at": "2026-03-22T12:56:07",
+  "group_count": 3,
+  "total_requests": 1440000,
+  "successful_requests": 1440000,
+  "failed_requests": 0,
+  "error_requests": 0,
+  "groups": [
+    {
+      "name": "Warm Up",
+      "concurrency": 2,
+      "run_desc": "20000 runs",
+      "step_count": 2,
+      "total_requests": 40000,
+      "successful_requests": 40000,
+      "failed_requests": 0,
+      "error_requests": 0,
+      "steps": [
+        {
+          "name": "hello",
+          "url": "http://localhost:3000/hello",
+          "method": "GET",
+          "concurrency": 2,
+          "total_requests": 20000,
+          "successful_requests": 20000,
+          "failed_requests": 0,
+          "error_requests": 0,
+          "duration_secs": 2.208916875,
+          "throughput_rps": 9054.211240973023,
+          "latency_min_ms": 0.07,
+          "latency_max_ms": 13.329,
+          "latency_mean_ms": 0.10923815,
+          "latency_stddev_ms": 0.13425082098290742,
+          "latency_p50_ms": 0.106,
+          "latency_p75_ms": 0.107,
+          "latency_p90_ms": 0.116,
+          "latency_p95_ms": 0.131,
+          "latency_p99_ms": 0.195,
+          "latency_p999_ms": 0.383,
+          "status_distribution": {
+            "200": 20000
+          },
+          "error_distribution": {},
+          "timeline": [
+            [
+              0,
+              8994
+            ],
+            [
+              1,
+              9074
+            ],
+            [
+              2,
+              1932
+            ]
+          ],
+          "latency_histogram": [
+            [
+              "≤500µs",
+              19993
+            ],
+            [
+              "≤1ms",
+              4
+            ],
+            [
+              "≤2ms",
+              1
+            ],
+            [
+              "≤5ms",
+              0
+            ],
+            [
+              "≤10ms",
+              0
+            ],
+            [
+              "≤25ms",
+              2
+            ],
+            [
+              "≤50ms",
+              0
+            ],
+            [
+              "≤100ms",
+              0
+            ],
+            [
+              "≤250ms",
+              0
+            ],
+            [
+              "≤500ms",
+              0
+            ],
+            [
+              "≤1s",
+              0
+            ],
+            [
+              "≤2s",
+              0
+            ],
+            [
+              "≤5s",
+              0
+            ],
+            [
+              "≤10s",
+              0
+            ]
+          ]
+        },
+        {
+          "name": "health",
+          "url": "http://localhost:3000/_health",
+          "method": "GET",
+          "concurrency": 2,
+          "total_requests": 20000,
+          "successful_requests": 20000,
+          "failed_requests": 0,
+          "error_requests": 0,
+          "duration_secs": 2.208916875,
+          "throughput_rps": 9054.211240973023,
+          "latency_min_ms": 0.07,
+          "latency_max_ms": 0.952,
+          "latency_mean_ms": 0.1081983,
+          "latency_stddev_ms": 0.023228794138095032,
+          "latency_p50_ms": 0.106,
+          "latency_p75_ms": 0.108,
+          "latency_p90_ms": 0.116,
+          "latency_p95_ms": 0.131,
+          "latency_p99_ms": 0.199,
+          "latency_p999_ms": 0.373,
+          "status_distribution": {
+            "200": 20000
+          },
+          "error_distribution": {},
+          "timeline": [
+            [
+              0,
+              8993
+            ],
+            [
+              1,
+              9074
+            ],
+            [
+              2,
+              1933
+            ]
+          ],
+          "latency_histogram": [
+            [
+              "≤500µs",
+              19994
+            ],
+            [
+              "≤1ms",
+              6
+            ],
+            [
+              "≤2ms",
+              0
+            ],
+            [
+              "≤5ms",
+              0
+            ],
+            [
+              "≤10ms",
+              0
+            ],
+            [
+              "≤25ms",
+              0
+            ],
+            [
+              "≤50ms",
+              0
+            ],
+            [
+              "≤100ms",
+              0
+            ],
+            [
+              "≤250ms",
+              0
+            ],
+            [
+              "≤500ms",
+              0
+            ],
+            [
+              "≤1s",
+              0
+            ],
+            [
+              "≤2s",
+              0
+            ],
+            [
+              "≤5s",
+              0
+            ],
+            [
+              "≤10s",
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Steady State",
+      "concurrency": 10,
+      "run_desc": "200000 runs",
+      "step_count": 2,
+      "total_requests": 400000,
+      "successful_requests": 400000,
+      "failed_requests": 0,
+      "error_requests": 0,
+      "steps": [
+        {
+          "name": "hello",
+          "url": "http://localhost:3000/hello",
+          "method": "GET",
+          "concurrency": 10,
+          "total_requests": 200000,
+          "successful_requests": 200000,
+          "failed_requests": 0,
+          "error_requests": 0,
+          "duration_secs": 10.915032125,
+          "throughput_rps": 18323.35422466748,
+          "latency_min_ms": 0.06,
+          "latency_max_ms": 1.786,
+          "latency_mean_ms": 0.11670217,
+          "latency_stddev_ms": 0.05408237140964896,
+          "latency_p50_ms": 0.097,
+          "latency_p75_ms": 0.137,
+          "latency_p90_ms": 0.19,
+          "latency_p95_ms": 0.223,
+          "latency_p99_ms": 0.298,
+          "latency_p999_ms": 0.419,
+          "status_distribution": {
+            "200": 200000
+          },
+          "error_distribution": {},
+          "timeline": [
+            [
+              0,
+              17846
+            ],
+            [
+              1,
+              18560
+            ],
+            [
+              2,
+              18238
+            ],
+            [
+              3,
+              17726
+            ],
+            [
+              4,
+              18017
+            ],
+            [
+              5,
+              18230
+            ],
+            [
+              6,
+              18531
+            ],
+            [
+              7,
+              18889
+            ],
+            [
+              8,
+              18145
+            ],
+            [
+              9,
+              18766
+            ],
+            [
+              10,
+              17052
+            ]
+          ],
+          "latency_histogram": [
+            [
+              "≤500µs",
+              199914
+            ],
+            [
+              "≤1ms",
+              67
+            ],
+            [
+              "≤2ms",
+              19
+            ],
+            [
+              "≤5ms",
+              0
+            ],
+            [
+              "≤10ms",
+              0
+            ],
+            [
+              "≤25ms",
+              0
+            ],
+            [
+              "≤50ms",
+              0
+            ],
+            [
+              "≤100ms",
+              0
+            ],
+            [
+              "≤250ms",
+              0
+            ],
+            [
+              "≤500ms",
+              0
+            ],
+            [
+              "≤1s",
+              0
+            ],
+            [
+              "≤2s",
+              0
+            ],
+            [
+              "≤5s",
+              0
+            ],
+            [
+              "≤10s",
+              0
+            ]
+          ]
+        },
+        {
+          "name": "health",
+          "url": "http://localhost:3000/_health",
+          "method": "GET",
+          "concurrency": 10,
+          "total_requests": 200000,
+          "successful_requests": 200000,
+          "failed_requests": 0,
+          "error_requests": 0,
+          "duration_secs": 10.915032125,
+          "throughput_rps": 18323.35422466748,
+          "latency_min_ms": 0.06,
+          "latency_max_ms": 1.56,
+          "latency_mean_ms": 0.11687488,
+          "latency_stddev_ms": 0.05352426678606174,
+          "latency_p50_ms": 0.098,
+          "latency_p75_ms": 0.138,
+          "latency_p90_ms": 0.19,
+          "latency_p95_ms": 0.225,
+          "latency_p99_ms": 0.297,
+          "latency_p999_ms": 0.416,
+          "status_distribution": {
+            "200": 200000
+          },
+          "error_distribution": {},
+          "timeline": [
+            [
+              0,
+              17838
+            ],
+            [
+              1,
+              18562
+            ],
+            [
+              2,
+              18238
+            ],
+            [
+              3,
+              17729
+            ],
+            [
+              4,
+              18016
+            ],
+            [
+              5,
+              18229
+            ],
+            [
+              6,
+              18531
+            ],
+            [
+              7,
+              18891
+            ],
+            [
+              8,
+              18143
+            ],
+            [
+              9,
+              18767
+            ],
+            [
+              10,
+              17056
+            ]
+          ],
+          "latency_histogram": [
+            [
+              "≤500µs",
+              199914
+            ],
+            [
+              "≤1ms",
+              75
+            ],
+            [
+              "≤2ms",
+              11
+            ],
+            [
+              "≤5ms",
+              0
+            ],
+            [
+              "≤10ms",
+              0
+            ],
+            [
+              "≤25ms",
+              0
+            ],
+            [
+              "≤50ms",
+              0
+            ],
+            [
+              "≤100ms",
+              0
+            ],
+            [
+              "≤250ms",
+              0
+            ],
+            [
+              "≤500ms",
+              0
+            ],
+            [
+              "≤1s",
+              0
+            ],
+            [
+              "≤2s",
+              0
+            ],
+            [
+              "≤5s",
+              0
+            ],
+            [
+              "≤10s",
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Over Stress",
+      "concurrency": 50,
+      "run_desc": "500000 runs",
+      "step_count": 2,
+      "total_requests": 1000000,
+      "successful_requests": 1000000,
+      "failed_requests": 0,
+      "error_requests": 0,
+      "steps": [
+        {
+          "name": "hello",
+          "url": "http://localhost:3000/hello",
+          "method": "GET",
+          "concurrency": 50,
+          "total_requests": 500000,
+          "successful_requests": 500000,
+          "failed_requests": 0,
+          "error_requests": 0,
+          "duration_secs": 26.968666792,
+          "throughput_rps": 18540.0340275004,
+          "latency_min_ms": 0.059,
+          "latency_max_ms": 3.009,
+          "latency_mean_ms": 0.10727522,
+          "latency_stddev_ms": 0.05121489988227577,
+          "latency_p50_ms": 0.092,
+          "latency_p75_ms": 0.122,
+          "latency_p90_ms": 0.166,
+          "latency_p95_ms": 0.196,
+          "latency_p99_ms": 0.259,
+          "latency_p999_ms": 0.388,
+          "status_distribution": {
+            "200": 500000
+          },
+          "error_distribution": {},
+          "timeline": [
+            [
+              0,
+              18524
+            ],
+            [
+              1,
+              18046
+            ],
+            [
+              2,
+              18591
+            ],
+            [
+              3,
+              18796
+            ],
+            [
+              4,
+              17986
+            ],
+            [
+              5,
+              18669
+            ],
+            [
+              6,
+              18624
+            ],
+            [
+              7,
+              18724
+            ],
+            [
+              8,
+              18150
+            ],
+            [
+              9,
+              18662
+            ],
+            [
+              10,
+              18416
+            ],
+            [
+              11,
+              18707
+            ],
+            [
+              12,
+              18859
+            ],
+            [
+              13,
+              18210
+            ],
+            [
+              14,
+              18582
+            ],
+            [
+              15,
+              18714
+            ],
+            [
+              16,
+              18818
+            ],
+            [
+              17,
+              18197
+            ],
+            [
+              18,
+              18826
+            ],
+            [
+              19,
+              18783
+            ],
+            [
+              20,
+              18731
+            ],
+            [
+              21,
+              18722
+            ],
+            [
+              22,
+              17955
+            ],
+            [
+              23,
+              18774
+            ],
+            [
+              24,
+              18581
+            ],
+            [
+              25,
+              18684
+            ],
+            [
+              26,
+              17669
+            ]
+          ],
+          "latency_histogram": [
+            [
+              "≤500µs",
+              499671
+            ],
+            [
+              "≤1ms",
+              195
+            ],
+            [
+              "≤2ms",
+              92
+            ],
+            [
+              "≤5ms",
+              42
+            ],
+            [
+              "≤10ms",
+              0
+            ],
+            [
+              "≤25ms",
+              0
+            ],
+            [
+              "≤50ms",
+              0
+            ],
+            [
+              "≤100ms",
+              0
+            ],
+            [
+              "≤250ms",
+              0
+            ],
+            [
+              "≤500ms",
+              0
+            ],
+            [
+              "≤1s",
+              0
+            ],
+            [
+              "≤2s",
+              0
+            ],
+            [
+              "≤5s",
+              0
+            ],
+            [
+              "≤10s",
+              0
+            ]
+          ]
+        },
+        {
+          "name": "health",
+          "url": "http://localhost:3000/_health",
+          "method": "GET",
+          "concurrency": 50,
+          "total_requests": 500000,
+          "successful_requests": 500000,
+          "failed_requests": 0,
+          "error_requests": 0,
+          "duration_secs": 26.968666792,
+          "throughput_rps": 18540.0340275004,
+          "latency_min_ms": 0.059,
+          "latency_max_ms": 2.321,
+          "latency_mean_ms": 0.107233524,
+          "latency_stddev_ms": 0.04735374855849469,
+          "latency_p50_ms": 0.092,
+          "latency_p75_ms": 0.122,
+          "latency_p90_ms": 0.166,
+          "latency_p95_ms": 0.196,
+          "latency_p99_ms": 0.259,
+          "latency_p999_ms": 0.373,
+          "status_distribution": {
+            "200": 500000
+          },
+          "error_distribution": {},
+          "timeline": [
+            [
+              0,
+              18502
+            ],
+            [
+              1,
+              18044
+            ],
+            [
+              2,
+              18591
+            ],
+            [
+              3,
+              18796
+            ],
+            [
+              4,
+              17988
+            ],
+            [
+              5,
+              18670
+            ],
+            [
+              6,
+              18622
+            ],
+            [
+              7,
+              18711
+            ],
+            [
+              8,
+              18163
+            ],
+            [
+              9,
+              18663
+            ],
+            [
+              10,
+              18414
+            ],
+            [
+              11,
+              18710
+            ],
+            [
+              12,
+              18851
+            ],
+            [
+              13,
+              18212
+            ],
+            [
+              14,
+              18580
+            ],
+            [
+              15,
+              18721
+            ],
+            [
+              16,
+              18822
+            ],
+            [
+              17,
+              18194
+            ],
+            [
+              18,
+              18817
+            ],
+            [
+              19,
+              18783
+            ],
+            [
+              20,
+              18729
+            ],
+            [
+              21,
+              18729
+            ],
+            [
+              22,
+              17948
+            ],
+            [
+              23,
+              18784
+            ],
+            [
+              24,
+              18583
+            ],
+            [
+              25,
+              18684
+            ],
+            [
+              26,
+              17689
+            ]
+          ],
+          "latency_histogram": [
+            [
+              "≤500µs",
+              499723
+            ],
+            [
+              "≤1ms",
+              189
+            ],
+            [
+              "≤2ms",
+              82
+            ],
+            [
+              "≤5ms",
+              6
+            ],
+            [
+              "≤10ms",
+              0
+            ],
+            [
+              "≤25ms",
+              0
+            ],
+            [
+              "≤50ms",
+              0
+            ],
+            [
+              "≤100ms",
+              0
+            ],
+            [
+              "≤250ms",
+              0
+            ],
+            [
+              "≤500ms",
+              0
+            ],
+            [
+              "≤1s",
+              0
+            ],
+            [
+              "≤2s",
+              0
+            ],
+            [
+              "≤5s",
+              0
+            ],
+            [
+              "≤10s",
+              0
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

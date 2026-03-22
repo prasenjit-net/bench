@@ -30,6 +30,13 @@ pub enum Command {
         file: String,
     },
 
+    /// View a JSON benchmark report in your browser
+    Report {
+        /// Path to the JSON report file [default: report.json]
+        #[arg(long, short = 'f', default_value = "report.json")]
+        file: String,
+    },
+
     /// Run a benchmark
     Run(RunArgs),
 }
@@ -113,7 +120,8 @@ impl Cli {
     pub fn into_run_config(self) -> Result<RunConfig> {
         match self.command {
             Command::Run(args) => args.into_run_config(),
-            Command::Edit { .. } => unreachable!("edit handled in main"),
+            Command::Edit { .. }   => unreachable!("edit handled in main"),
+            Command::Report { .. } => unreachable!("report handled in main"),
         }
     }
 }
