@@ -11,8 +11,10 @@ use crate::config::{OutputFormat, RunConfig, RunParams, Scenario, ScenarioFile, 
     long_about = "Benchmark HTTP/REST APIs.\n\n\
                   Single-step mode:  bench --url <URL> [flags]\n\
                   File mode:         bench --file scenarios.json\n\n\
-                  In file mode, a global 'run' block sets defaults; individual scenarios\n\
-                  can override any run field. Scenarios execute sequentially in order."
+                  In file mode, define steps once in the top-level 'steps' map and\n\
+                  reference them by name inside each scenario. A global 'run' block\n\
+                  sets defaults; individual scenarios can override any run field.\n\
+                  Scenarios execute sequentially in order."
 )]
 pub struct Cli {
     // ── File mode ─────────────────────────────────────────────────────────────
@@ -92,14 +94,34 @@ impl Cli {
                 timeout_ms: None, output_format: None, output: None,
             });
 
-            // Validate each scenario has a resolvable run config
-            for (i, scenario) in sf.scenarios.iter().enumerate() {
-                let eff = match &scenario.run {
+            // Resolve ScenarioRef → Scenario (expand step name references)
+            let mut scenarios: Vec<Scenario> = Vec::with_capacity(sf.scenarios.len());
+            for (i, sref) in sf.scenarios.iter().enumerate() {
+                let ctx = format!("scenario #{i} \"{}\"", sref.name);
+                if sref.steps.is_empty() {
+                    bail!("{ctx}: has no steps");
+                }
+                let steps = sref.steps.iter().map(|step_name| {
+                    sf.steps.get(step_name)
+                        .ok_or_else(|| anyhow::anyhow!(
+                            "{ctx}: step \"{step_name}\" not found in the top-level \"steps\" map"
+                        ))
+                        .map(|def| def.clone().into_step(step_name.clone()))
+                }).collect::<Result<Vec<Step>>>()?;
+
+                let eff = match &sref.run {
                     Some(s) => s.merge_over(&global_run),
                     None    => global_run.clone(),
                 };
-                validate_run(&eff, &format!("scenario #{i} \"{}\"", scenario.name))?;
-                validate_steps(scenario)?;
+                validate_run(&eff, &ctx)?;
+
+                for step in &steps {
+                    if step.url.is_empty() {
+                        bail!("{ctx}, step \"{}\": empty URL", step.name);
+                    }
+                }
+
+                scenarios.push(Scenario { name: sref.name.clone(), run: sref.run.clone(), steps });
             }
 
             let file_fmt = global_run.output_format.as_deref()
@@ -108,12 +130,7 @@ impl Cli {
             let output_path = self.output.or(global_run.output.clone())
                 .unwrap_or(default_out);
 
-            Ok(RunConfig {
-                scenarios: sf.scenarios,
-                global_run,
-                output_format: file_fmt,
-                output_path,
-            })
+            Ok(RunConfig { scenarios, global_run, output_format: file_fmt, output_path })
         } else {
             if self.duration.is_none() && self.requests.is_none() {
                 bail!("Either --duration or --requests must be specified");
@@ -134,7 +151,7 @@ impl Cli {
             };
             let scenario = Scenario {
                 name: self.name.clone(),
-                run: None, // uses global
+                run: None,
                 steps: vec![Step {
                     name: self.name,
                     url: self.url.expect("--url required"),
@@ -146,12 +163,7 @@ impl Cli {
             let default_out = format!("report.{}", fmt.default_extension());
             let output_path = self.output.unwrap_or(default_out);
 
-            Ok(RunConfig {
-                scenarios: vec![scenario],
-                global_run,
-                output_format: fmt,
-                output_path,
-            })
+            Ok(RunConfig { scenarios: vec![scenario], global_run, output_format: fmt, output_path })
         }
     }
 }
@@ -173,14 +185,3 @@ fn validate_run(r: &RunParams, ctx: &str) -> Result<()> {
     Ok(())
 }
 
-fn validate_steps(s: &Scenario) -> Result<()> {
-    if s.steps.is_empty() {
-        bail!("Scenario \"{}\" has no steps", s.name);
-    }
-    for (i, step) in s.steps.iter().enumerate() {
-        if step.url.is_empty() {
-            bail!("Scenario \"{}\", step #{i} \"{}\": empty URL", s.name, step.name);
-        }
-    }
-    Ok(())
-}

@@ -16,6 +16,24 @@ pub struct Step {
 
 fn default_method() -> String { "GET".to_string() }
 
+/// A step definition as declared in the `steps` library of a scenario file.
+/// The map key becomes the step's `name` at resolution time.
+#[derive(Debug, Clone, Deserialize)]
+pub struct StepDef {
+    pub url: String,
+    #[serde(default = "default_method")]
+    pub method: String,
+    #[serde(default)]
+    pub headers: HashMap<String, String>,
+    pub body: Option<String>,
+}
+
+impl StepDef {
+    pub fn into_step(self, name: String) -> Step {
+        Step { name, url: self.url, method: self.method, headers: self.headers, body: self.body }
+    }
+}
+
 // ── Run parameters ────────────────────────────────────────────────────────────
 
 /// Controls how many times a scenario executes and with what parallelism.
@@ -51,15 +69,24 @@ impl RunParams {
 
 // ── Scenario ──────────────────────────────────────────────────────────────────
 
-/// A named, ordered list of HTTP steps.
+/// A named, ordered list of HTTP steps (fully resolved — used at runtime).
 /// One execution = all steps run sequentially, exactly once.
 /// `run` is optional — if absent the global run config applies.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Scenario {
     pub name: String,
     /// Per-scenario run override (any field present overrides the global value).
     pub run: Option<RunParams>,
     pub steps: Vec<Step>,
+}
+
+/// A scenario as declared in the JSON file — steps are referenced by name.
+#[derive(Debug, Deserialize)]
+pub struct ScenarioRef {
+    pub name: String,
+    pub run: Option<RunParams>,
+    /// Ordered list of step names referencing entries in the top-level `steps` map.
+    pub steps: Vec<String>,
 }
 
 // ── Top-level JSON file ───────────────────────────────────────────────────────
@@ -68,7 +95,10 @@ pub struct Scenario {
 pub struct ScenarioFile {
     /// Global run defaults — inherited by any scenario that omits its own `run`.
     pub run: Option<RunParams>,
-    pub scenarios: Vec<Scenario>,
+    /// Named step library — define once, reference from any scenario.
+    #[serde(default)]
+    pub steps: HashMap<String, StepDef>,
+    pub scenarios: Vec<ScenarioRef>,
 }
 
 // ── Runtime config ────────────────────────────────────────────────────────────
@@ -84,7 +114,7 @@ pub struct RunConfig {
 
 impl RunConfig {
     /// Return the effective RunParams for a given scenario (scenario overrides global).
-    pub fn effective_run<'a>(&'a self, scenario: &'a Scenario) -> RunParams {
+    pub fn effective_run(&self, scenario: &Scenario) -> RunParams {
         match &scenario.run {
             Some(s_run) => s_run.merge_over(&self.global_run),
             None        => self.global_run.clone(),
