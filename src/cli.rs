@@ -112,6 +112,10 @@ pub struct RunArgs {
     /// Output file path
     #[arg(long, short = 'o')]
     pub output: Option<String>,
+
+    /// Open the report in the browser after the benchmark completes (JSON reports only)
+    #[arg(long)]
+    pub open: bool,
 }
 
 // ── Config resolution ─────────────────────────────────────────────────────────
@@ -188,7 +192,7 @@ impl RunArgs {
             let default_out = format!("report.{}", resolved_fmt.default_extension());
             let output_path = global_run.output.clone().unwrap_or(default_out);
 
-            Ok(RunConfig { scenarios, global_run, output_format: resolved_fmt, output_path })
+            Ok(RunConfig { scenarios, global_run, output_format: resolved_fmt, output_path, open_report: self.open })
         } else {
             if self.duration.is_none() && self.requests.is_none() {
                 bail!("Either --duration or --requests must be specified");
@@ -223,7 +227,7 @@ impl RunArgs {
             let default_out = format!("report.{}", fmt.default_extension());
             let output_path = self.output.unwrap_or(default_out);
 
-            Ok(RunConfig { scenarios: vec![scenario], global_run, output_format: fmt, output_path })
+            Ok(RunConfig { scenarios: vec![scenario], global_run, output_format: fmt, output_path, open_report: self.open })
         }
     }
 }

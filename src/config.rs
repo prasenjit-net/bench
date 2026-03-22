@@ -110,6 +110,8 @@ pub struct RunConfig {
     pub global_run: RunParams,
     pub output_format: OutputFormat,
     pub output_path: String,
+    /// If true, open the report in the browser after generation.
+    pub open_report: bool,
 }
 
 impl RunConfig {

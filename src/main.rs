@@ -77,5 +77,19 @@ async fn main() -> Result<()> {
     println!("✅ Done!  {} scenario(s)  ·  {} total requests  ·  {} ok  ·  {} errors",
         groups.len(), total, ok, err);
 
+    if cfg.open_report {
+        match cfg.output_format {
+            config::OutputFormat::Json => {
+                println!("\n🌐 Opening report in browser…");
+                let path = std::path::PathBuf::from(&cfg.output_path);
+                editor::run_report_viewer(path).await?;
+            }
+            _ => {
+                eprintln!("⚠️  --open is only supported for JSON reports. \
+                           Re-run with --output-format json to use this feature.");
+            }
+        }
+    }
+
     Ok(())
 }
