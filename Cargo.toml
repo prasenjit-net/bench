@@ -23,7 +23,7 @@ serde_json = "1"
 hdrhistogram = "7"
 
 # HTML report templating
-tera = "1"
+# (removed tera — HTML report now uses inline bundling)
 
 # PDF generation
 printpdf = "0.7"

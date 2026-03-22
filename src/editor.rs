@@ -8,14 +8,10 @@ use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
-use rust_embed::Embed;
 use serde_json::json;
 use tower_http::cors::{Any, CorsLayer};
 
-// Embed the compiled React dist/ into the binary
-#[derive(Embed)]
-#[folder = "ui/dist/"]
-struct UiAssets;
+use crate::ui_assets::UiAssets;
 
 #[derive(Clone, PartialEq)]
 pub enum ServerMode {

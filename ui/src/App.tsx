@@ -9,6 +9,12 @@ export default function App() {
   const [mode, setMode] = useState<AppMode>(null)
 
   useEffect(() => {
+    if (window.__BENCH_MODE__) {
+      const m = window.__BENCH_MODE__
+      setMode(m)
+      document.title = m === 'report' ? 'bench — Report Viewer' : 'bench — Scenario Editor'
+      return
+    }
     fetch('/api/mode')
       .then(r => r.json())
       .then((data: { mode: AppMode }) => {

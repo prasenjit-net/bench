@@ -238,6 +238,11 @@ export default function ReportViewer() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (window.__BENCH_REPORT__) {
+      setReport(window.__BENCH_REPORT__)
+      setLoading(false)
+      return
+    }
     fetch('/api/report')
       .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json() })
       .then(setReport)

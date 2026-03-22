@@ -4,6 +4,7 @@ mod editor;
 mod report;
 mod runner;
 mod stats;
+mod ui_assets;
 
 use anyhow::Result;
 use clap::Parser;

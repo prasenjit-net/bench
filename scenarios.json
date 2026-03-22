@@ -17,8 +17,8 @@
   },
   "run": {
     "concurrency": 10,
-    "output": "report.json",
-    "output_format": "json",
+    "output": "report.pdf",
+    "output_format": "pdf",
     "timeout_ms": 5000
   },
   "scenarios": [
@@ -47,7 +47,7 @@
       "name": "Over Stress",
       "run": {
         "concurrency": 50,
-        "requests": 500000
+        "requests": 50000
       },
       "steps": [
         "hello",
