@@ -7,89 +7,50 @@ mod stats;
 use anyhow::Result;
 use clap::Parser;
 use cli::Cli;
-use config::ScenarioNode;
 use report::generate_report;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
-    let run_config = args.into_run_config()?;
+    let cfg = args.into_run_config()?;
 
-    // Print the scenario tree so the user knows what will run
-    println!("\n🚀 bench — scenario tree:");
-    print_tree(&run_config.root, 0);
-
-    let run = &run_config.run_params;
+    let run = &cfg.run;
     let iter_desc = match (run.requests, run.duration_secs) {
-        (Some(n), _) => format!("{n} iterations"),
+        (Some(n), _) => format!("{n} runs"),
         (_, Some(s)) => format!("{s}s duration"),
         _ => "?".to_string(),
     };
-    println!(
-        "\n  concurrency: {}  ·  {}  ·  timeout: {}ms\n",
-        run.concurrency, iter_desc, run.timeout_ms
-    );
 
-    let results = runner::run_scenario_tree(&run_config.root, &run_config.run_params).await?;
+    println!("\n🚀 bench — \"{}\"", cfg.scenario.name);
+    println!("  {} step(s) · {} · concurrency {} · timeout {}ms\n",
+        cfg.scenario.steps.len(), iter_desc, run.concurrency, run.timeout_ms);
 
-    // Print per-leaf summary
+    for (i, step) in cfg.scenario.steps.iter().enumerate() {
+        println!("  {}. {} {} ({})", i + 1, step.method.to_uppercase(), step.url, step.name);
+    }
+    println!();
+
+    let results = runner::run(&cfg.scenario, &cfg.run).await?;
+
     println!();
     for r in &results {
-        println!(
-            "  ✓ {}  [{} {}]",
-            r.name, r.method, r.url
-        );
-        println!(
-            "    {:.1} req/s  |  {} total  |  {} success  |  {} failed  |  {} errors  |  p99: {:.2}ms",
-            r.throughput_rps,
-            r.total_requests,
-            r.successful_requests,
-            r.failed_requests,
-            r.error_requests,
-            r.latency_p99_ms,
-        );
+        println!("  ✓ {}  [{} {}]", r.name, r.method, r.url);
+        println!("    {:.1} req/s  ·  {} total  ·  {} ok  ·  {} fail  ·  {} err  ·  p99 {:.2}ms",
+            r.throughput_rps, r.total_requests, r.successful_requests,
+            r.failed_requests, r.error_requests, r.latency_p99_ms);
     }
 
-    println!(
-        "\n📄 Generating {} report → {}",
-        match run_config.output_format {
-            config::OutputFormat::Html => "HTML",
-            config::OutputFormat::Pdf => "PDF",
-        },
-        run_config.output_path
-    );
+    let fmt_name = match cfg.output_format {
+        config::OutputFormat::Html => "HTML",
+        config::OutputFormat::Pdf  => "PDF",
+    };
+    println!("\n📄 Generating {fmt_name} report → {}", cfg.output_path);
+    generate_report(&results, &cfg.output_format, &cfg.output_path)?;
 
-    generate_report(&results, &run_config.output_format, &run_config.output_path)?;
-
-    let total_reqs: u64 = results.iter().map(|r| r.total_requests).sum();
-    let total_success: u64 = results.iter().map(|r| r.successful_requests).sum();
-    let total_errors: u64 = results.iter().map(|r| r.error_requests).sum();
-    println!(
-        "✅ Done!  {} leaf endpoint(s)  ·  {} requests total  ·  {} success  ·  {} errors",
-        results.len(),
-        total_reqs,
-        total_success,
-        total_errors,
-    );
+    let total: u64 = results.iter().map(|r| r.total_requests).sum();
+    let ok: u64    = results.iter().map(|r| r.successful_requests).sum();
+    let err: u64   = results.iter().map(|r| r.error_requests).sum();
+    println!("✅ Done!  {} step(s) · {} requests · {} ok · {} errors", results.len(), total, ok, err);
 
     Ok(())
 }
-
-/// Print the scenario tree in a readable indented format before execution.
-fn print_tree(node: &ScenarioNode, depth: usize) {
-    let indent = "  ".repeat(depth);
-    match node {
-        ScenarioNode::Group(g) => {
-            println!("{}[{}] {}", indent, g.mode, g.name);
-            for step in &g.steps {
-                print_tree(step, depth + 1);
-            }
-        }
-        ScenarioNode::Request(r) => {
-            println!("{}→ {} {}  ({})", indent, r.method.to_uppercase(), r.url, r.name);
-        }
-    }
-}
-
-
-

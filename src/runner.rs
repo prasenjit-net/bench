@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -8,27 +7,14 @@ use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Client;
 use tokio::sync::Mutex;
 
-use crate::config::{ExecutionMode, RequestNode, RunParams, ScenarioNode};
+use crate::config::{RunParams, Scenario, Step};
 use crate::stats::{RequestOutcome, ScenarioResult};
 
-// ── Shared outcome collector: leaf name → all outcomes across iterations ──────
-type OutcomeMap = Arc<Mutex<HashMap<String, Vec<RequestOutcome>>>>;
-
-// ── Public entry point ────────────────────────────────────────────────────────
-
-/// Run the full scenario tree according to `run` parameters.
+/// Run the scenario according to `run` parameters.
 ///
-/// Execution model:
-///   - `run.concurrency` workers are spawned; each runs its share of iterations.
-///   - One "iteration" = traverse the tree once, firing every leaf request exactly once.
-///   - Within one iteration, sequential groups fire their children one-by-one;
-///     parallel groups fire all children concurrently (tokio join_all).
-///   - Outcomes are collected per leaf-node name across all iterations and workers.
-///   - Returns one `ScenarioResult` per unique leaf node, in tree-definition order.
-pub async fn run_scenario_tree(
-    root: &ScenarioNode,
-    run: &RunParams,
-) -> Result<Vec<ScenarioResult>> {
+/// `concurrency` workers each execute the full scenario (all steps in order)
+/// for their share of total runs. Stats are collected per step name.
+pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioResult>> {
     let client = Arc::new(
         Client::builder()
             .timeout(Duration::from_millis(run.timeout_ms))
@@ -36,188 +22,147 @@ pub async fn run_scenario_tree(
             .build()?,
     );
 
-    let outcome_map: OutcomeMap = Arc::new(Mutex::new(HashMap::new()));
-    let total_iters = run.requests;
+    // outcomes: step name → collected outcomes across all runs × workers
+    let outcomes: Arc<Mutex<HashMap<String, Vec<RequestOutcome>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+
+    let total_runs = run.requests;
     let duration_limit = run.duration_secs.map(Duration::from_secs);
 
-    // Progress bar tracks full-tree iterations, not individual requests
-    let pb = if let Some(n) = total_iters {
-        let pb = ProgressBar::new(n);
-        pb.set_style(
-            ProgressStyle::with_template(
-                "  [{elapsed_precise}] [{bar:50.cyan/blue}] {pos}/{len} iterations  ({per_sec})",
-            )
-            .unwrap()
-            .progress_chars("=>-"),
-        );
-        pb
-    } else {
-        let pb = ProgressBar::new_spinner();
-        pb.set_style(
-            ProgressStyle::with_template(
-                "  [{elapsed_precise}] {spinner}  {pos} iterations  ({per_sec})",
-            )
-            .unwrap(),
-        );
-        pb
+    let pb = match total_runs {
+        Some(n) => {
+            let pb = ProgressBar::new(n);
+            pb.set_style(
+                ProgressStyle::with_template(
+                    "  [{elapsed_precise}] [{bar:50.cyan/blue}] {pos}/{len} runs  ({per_sec})",
+                )
+                .unwrap()
+                .progress_chars("=>-"),
+            );
+            pb
+        }
+        None => {
+            let pb = ProgressBar::new_spinner();
+            pb.set_style(
+                ProgressStyle::with_template(
+                    "  [{elapsed_precise}] {spinner}  {pos} runs  ({per_sec})",
+                )
+                .unwrap(),
+            );
+            pb
+        }
     };
     let pb = Arc::new(pb);
     let start = Instant::now();
 
-    if let Some(total) = total_iters {
-        // Count-based: distribute total iterations evenly across workers
+    if let Some(total) = total_runs {
+        // Distribute total runs evenly across workers
         let chunk = (total + run.concurrency as u64 - 1) / run.concurrency as u64;
         let tasks: Vec<_> = (0..run.concurrency)
             .map(|i| {
                 let client = Arc::clone(&client);
-                let outcome_map = Arc::clone(&outcome_map);
+                let outcomes = Arc::clone(&outcomes);
                 let pb = Arc::clone(&pb);
-                let root = root.clone();
+                let steps = scenario.steps.clone();
                 let worker_start = i as u64 * chunk;
                 let worker_end = (worker_start + chunk).min(total);
                 let count = worker_end.saturating_sub(worker_start);
+                let timeout_ms = run.timeout_ms;
 
                 tokio::spawn(async move {
                     for _ in 0..count {
-                        execute_tree_once(&root, &client, &outcome_map, start).await;
+                        execute_steps_once(&steps, &client, &outcomes, start, timeout_ms).await;
                         pb.inc(1);
                     }
                 })
             })
             .collect();
-
         futures::future::join_all(tasks).await;
     } else {
-        // Duration-based: each worker keeps iterating until deadline
+        // Run until deadline
         let deadline = start + duration_limit.unwrap();
         let tasks: Vec<_> = (0..run.concurrency)
             .map(|_| {
                 let client = Arc::clone(&client);
-                let outcome_map = Arc::clone(&outcome_map);
+                let outcomes = Arc::clone(&outcomes);
                 let pb = Arc::clone(&pb);
-                let root = root.clone();
+                let steps = scenario.steps.clone();
+                let timeout_ms = run.timeout_ms;
 
                 tokio::spawn(async move {
                     loop {
                         if Instant::now() >= deadline {
                             break;
                         }
-                        execute_tree_once(&root, &client, &outcome_map, start).await;
+                        execute_steps_once(&steps, &client, &outcomes, start, timeout_ms).await;
                         pb.inc(1);
                     }
                 })
             })
             .collect();
-
         futures::future::join_all(tasks).await;
     }
 
     pb.finish_and_clear();
     let elapsed = start.elapsed();
 
-    // Collect leaf nodes in definition order and build results
-    let mut leaves: Vec<(String, String, String)> = Vec::new(); // (name, url, method)
-    collect_leaves(root, &mut leaves);
-
-    let mut map = Arc::try_unwrap(outcome_map)
+    // Build one ScenarioResult per step, in definition order
+    let mut map = Arc::try_unwrap(outcomes)
         .expect("all tasks completed")
         .into_inner();
 
-    let mut results = Vec::new();
-    for (name, url, method) in &leaves {
-        let outcomes = map.remove(name.as_str()).unwrap_or_default();
-        let result = ScenarioResult::from_outcomes(
-            name,
-            url,
-            method,
-            run.concurrency,
-            outcomes,
-            elapsed,
-        );
-        results.push(result);
-    }
+    let results = scenario
+        .steps
+        .iter()
+        .map(|step| {
+            let step_outcomes = map.remove(&step.name).unwrap_or_default();
+            ScenarioResult::from_outcomes(
+                &step.name,
+                &step.url,
+                &step.method.to_uppercase(),
+                run.concurrency,
+                step_outcomes,
+                elapsed,
+            )
+        })
+        .collect();
 
     Ok(results)
 }
 
-// ── Tree traversal helpers ────────────────────────────────────────────────────
-
-/// Collect leaf request nodes in depth-first definition order.
-fn collect_leaves(node: &ScenarioNode, out: &mut Vec<(String, String, String)>) {
-    match node {
-        ScenarioNode::Request(r) => out.push((r.name.clone(), r.url.clone(), r.method.to_uppercase())),
-        ScenarioNode::Group(g) => {
-            for step in &g.steps {
-                collect_leaves(step, out);
-            }
-        }
+/// Execute all steps of the scenario once, in order.
+async fn execute_steps_once(
+    steps: &[Step],
+    client: &Client,
+    outcomes: &Arc<Mutex<HashMap<String, Vec<RequestOutcome>>>>,
+    start: Instant,
+    _timeout_ms: u64,
+) {
+    for step in steps {
+        let outcome = fire_request(client, step, start).await;
+        outcomes.lock().await.entry(step.name.clone()).or_default().push(outcome);
     }
 }
 
-/// Execute the scenario tree exactly once:
-///   - Sequential group → children run one after the other.
-///   - Parallel group   → all children start at the same time (join_all).
-///   - Leaf request     → one HTTP call, outcome appended under the leaf's name.
-fn execute_tree_once<'a>(
-    node: &'a ScenarioNode,
-    client: &'a Client,
-    outcome_map: &'a OutcomeMap,
-    start: Instant,
-) -> Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>> {
-    Box::pin(async move {
-        match node {
-            ScenarioNode::Request(req) => {
-                let outcome = fire_request(client, req, start).await;
-                outcome_map
-                    .lock()
-                    .await
-                    .entry(req.name.clone())
-                    .or_default()
-                    .push(outcome);
-            }
-
-            ScenarioNode::Group(group) => match group.mode {
-                ExecutionMode::Sequential => {
-                    for step in &group.steps {
-                        execute_tree_once(step, client, outcome_map, start).await;
-                    }
-                }
-                ExecutionMode::Parallel => {
-                    let futs: Vec<_> = group
-                        .steps
-                        .iter()
-                        .map(|step| execute_tree_once(step, client, outcome_map, start))
-                        .collect();
-                    futures::future::join_all(futs).await;
-                }
-            },
-        }
-    })
-}
-
-// ── HTTP request execution ────────────────────────────────────────────────────
-
-async fn fire_request(client: &Client, req: &RequestNode, start: Instant) -> RequestOutcome {
+async fn fire_request(client: &Client, step: &Step, start: Instant) -> RequestOutcome {
     let req_start = Instant::now();
     let offset_ms = start.elapsed().as_millis() as u64;
 
     let mut builder = client.request(
-        req.method.to_uppercase().parse().unwrap_or(reqwest::Method::GET),
-        &req.url,
+        step.method.to_uppercase().parse().unwrap_or(reqwest::Method::GET),
+        &step.url,
     );
-
-    for (k, v) in &req.headers {
+    for (k, v) in &step.headers {
         builder = builder.header(k.as_str(), v.as_str());
     }
-
-    if let Some(body) = &req.body {
+    if let Some(body) = &step.body {
         builder = builder.body(body.clone());
     }
 
     match builder.send().await {
-        Ok(response) => {
-            let status = response.status().as_u16();
-            let _ = response.bytes().await; // drain body for accurate timing
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            let _ = resp.bytes().await;
             RequestOutcome {
                 latency_us: req_start.elapsed().as_micros() as u64,
                 status_code: Some(status),
@@ -226,13 +171,9 @@ async fn fire_request(client: &Client, req: &RequestNode, start: Instant) -> Req
             }
         }
         Err(e) => {
-            let msg = if e.is_timeout() {
-                "timeout"
-            } else if e.is_connect() {
-                "connection error"
-            } else {
-                "request error"
-            };
+            let msg = if e.is_timeout() { "timeout" }
+                      else if e.is_connect() { "connection error" }
+                      else { "request error" };
             RequestOutcome {
                 latency_us: req_start.elapsed().as_micros() as u64,
                 status_code: None,

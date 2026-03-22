@@ -7,40 +7,20 @@
     "output": "report.html"
   },
   "scenario": {
-    "name": "Localhost API Suite",
-    "mode": "sequential",
+    "name": "Localhost API",
     "steps": [
       {
-        "name": "Warm-up",
-        "mode": "sequential",
-        "steps": [
-          {
-            "name": "Health Check",
-            "url": "http://localhost:3000/_health",
-            "method": "GET",
-            "headers": { "Accept": "application/json" }
-          }
-        ]
+        "name": "Hello",
+        "url": "http://localhost:3000/hello",
+        "method": "GET",
+        "headers": { "Accept": "application/json" }
       },
       {
-        "name": "Main Load Tests",
-        "mode": "parallel",
-        "steps": [
-          {
-            "name": "Hello Endpoint",
-            "url": "http://localhost:3000/hello",
-            "method": "GET",
-            "headers": { "Accept": "application/json" }
-          },
-          {
-            "name": "Health Check",
-            "url": "http://localhost:3000/_health",
-            "method": "GET",
-            "headers": { "Accept": "application/json" }
-          }
-        ]
+        "name": "Health Check",
+        "url": "http://localhost:3000/_health",
+        "method": "GET",
+        "headers": { "Accept": "application/json" }
       }
     ]
   }
 }
-

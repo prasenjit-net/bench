@@ -2,31 +2,27 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use std::collections::HashMap;
 
-use crate::config::{
-    ExecutionMode, GroupNode, OutputFormat, RequestNode, RunConfig, RunParams, ScenarioFile,
-    ScenarioNode,
-};
+use crate::config::{OutputFormat, RunConfig, RunParams, Scenario, ScenarioFile, Step};
 
 #[derive(Parser, Debug)]
 #[command(
     name = "bench",
     about = "HTTP/REST API benchmarking tool",
-    long_about = "Benchmark HTTP/REST APIs from the command line or a JSON scenario file.\n\n\
-                  Single-API mode:  bench --url <URL> [flags]\n\
-                  File mode:        bench --file scenarios.json\n\n\
-                  In file mode the JSON describes a scenario tree where groups can be\n\
-                  'parallel' (all children run simultaneously) or 'sequential' (one by one).\n\
-                  Groups can be nested arbitrarily deep. Global run parameters (concurrency,\n\
-                  duration, timeout) are declared once under \"run\" and apply to every leaf."
+    long_about = "Benchmark HTTP/REST APIs.\n\n\
+                  Single-step mode:  bench --url <URL> [flags]\n\
+                  File mode:         bench --file scenarios.json\n\n\
+                  Run parameters (concurrency, duration/requests, timeout) control\n\
+                  how many times the scenario executes. Each execution runs all steps\n\
+                  in order, exactly once."
 )]
 pub struct Cli {
-    // ── File mode ──────────────────────────────────────────────────────────────
-    /// Path to a JSON scenario file (enables tree scenario mode)
+    // ── File mode ─────────────────────────────────────────────────────────────
+    /// Path to a JSON scenario file
     #[arg(long, short = 'f', value_name = "FILE", conflicts_with = "url")]
     pub file: Option<String>,
 
-    // ── Single-API mode ────────────────────────────────────────────────────────
-    /// Target URL (single-API mode)
+    // ── Single-step mode ──────────────────────────────────────────────────────
+    /// Target URL
     #[arg(long, value_name = "URL", required_unless_present = "file")]
     pub url: Option<String>,
 
@@ -34,7 +30,7 @@ pub struct Cli {
     #[arg(long, short = 'X', default_value = "GET")]
     pub method: String,
 
-    /// Request header in "Key:Value" format (repeatable)
+    /// Request header "Key:Value" (repeatable)
     #[arg(long = "header", short = 'H', value_name = "KEY:VALUE", action = clap::ArgAction::Append)]
     pub headers: Vec<String>,
 
@@ -46,7 +42,8 @@ pub struct Cli {
     #[arg(long)]
     pub content_type: Option<String>,
 
-    /// Number of concurrent workers [default: 10]
+    // ── Run parameters ────────────────────────────────────────────────────────
+    /// Concurrent workers [default: 10]
     #[arg(long, short = 'c', default_value_t = 10)]
     pub concurrency: usize,
 
@@ -54,7 +51,7 @@ pub struct Cli {
     #[arg(long, conflicts_with = "requests")]
     pub duration: Option<u64>,
 
-    /// Send exactly this many requests (mutually exclusive with --duration)
+    /// Execute the scenario this many times total (mutually exclusive with --duration)
     #[arg(long, short = 'n')]
     pub requests: Option<u64>,
 
@@ -62,69 +59,48 @@ pub struct Cli {
     #[arg(long, default_value_t = 5000)]
     pub timeout: u64,
 
-    /// Scenario name (single-API mode)
+    /// Scenario name [default: Benchmark]
     #[arg(long, default_value = "Benchmark")]
     pub name: String,
 
-    // ── Output ─────────────────────────────────────────────────────────────────
+    // ── Output ────────────────────────────────────────────────────────────────
     /// Output format: html or pdf [default: html]
-    #[arg(long, default_value = "html", value_name = "FORMAT")]
+    #[arg(long, default_value = "html")]
     pub output_format: String,
 
-    /// Output file path [default: report.html or report.pdf]
+    /// Output file path
     #[arg(long, short = 'o')]
     pub output: Option<String>,
 }
 
 impl Cli {
     pub fn into_run_config(self) -> Result<RunConfig> {
-        let format = OutputFormat::from_str(&self.output_format);
+        let fmt = OutputFormat::from_str(&self.output_format);
 
         if let Some(file_path) = self.file {
-            // ── File mode ──
             let content = std::fs::read_to_string(&file_path)
-                .with_context(|| format!("Failed to read scenario file: {file_path}"))?;
+                .with_context(|| format!("Cannot read file: {file_path}"))?;
             let sf: ScenarioFile = serde_json::from_str(&content)
-                .with_context(|| format!("Failed to parse scenario file: {file_path}"))?;
+                .with_context(|| format!("Cannot parse file: {file_path}"))?;
+            validate_run(&sf.run)?;
+            validate_scenario(&sf.scenario)?;
 
-            validate_run_params(&sf.run)?;
-            validate_node(&sf.scenario)?;
-
-            let fmt = sf
-                .run
-                .output_format
-                .as_deref()
-                .map(OutputFormat::from_str)
-                .unwrap_or(format);
-
+            let fmt = sf.run.output_format.as_deref().map(OutputFormat::from_str).unwrap_or(fmt);
             let default_out = format!("report.{}", fmt.default_extension());
             let output_path = self.output.or(sf.run.output.clone()).unwrap_or(default_out);
 
-            Ok(RunConfig {
-                root: sf.scenario,
-                run_params: sf.run,
-                output_format: fmt,
-                output_path,
-            })
+            Ok(RunConfig { scenario: sf.scenario, run: sf.run, output_format: fmt, output_path })
         } else {
-            // ── Single-API mode ──
-            let url = self.url.expect("--url required (enforced by clap)");
-
             if self.duration.is_none() && self.requests.is_none() {
                 bail!("Either --duration or --requests must be specified");
             }
-
-            let mut headers: HashMap<String, String> = self
-                .headers
-                .iter()
-                .map(|h| parse_header(h))
-                .collect::<Result<_>>()?;
-
+            let mut headers: HashMap<String, String> =
+                self.headers.iter().map(|h| parse_header(h)).collect::<Result<_>>()?;
             if let Some(ct) = self.content_type {
                 headers.insert("content-type".to_string(), ct);
             }
 
-            let run_params = RunParams {
+            let run = RunParams {
                 concurrency: self.concurrency,
                 duration_secs: self.duration,
                 requests: self.requests,
@@ -132,42 +108,31 @@ impl Cli {
                 output_format: Some(self.output_format.clone()),
                 output: None,
             };
-
-            let root = ScenarioNode::Group(GroupNode {
+            let scenario = Scenario {
                 name: self.name.clone(),
-                mode: ExecutionMode::Sequential,
-                steps: vec![ScenarioNode::Request(RequestNode {
+                steps: vec![Step {
                     name: self.name,
-                    url,
+                    url: self.url.expect("--url required"),
                     method: self.method.to_uppercase(),
                     headers,
                     body: self.body,
-                })],
-            });
+                }],
+            };
 
-            let default_out = format!("report.{}", format.default_extension());
+            let default_out = format!("report.{}", fmt.default_extension());
             let output_path = self.output.unwrap_or(default_out);
-
-            Ok(RunConfig {
-                root,
-                run_params,
-                output_format: format,
-                output_path,
-            })
+            Ok(RunConfig { scenario, run, output_format: fmt, output_path })
         }
     }
 }
 
 fn parse_header(h: &str) -> Result<(String, String)> {
-    let colon = h
-        .find(':')
+    let colon = h.find(':')
         .with_context(|| format!("Invalid header format (expected Key:Value): {h}"))?;
-    let key = h[..colon].trim().to_lowercase().to_string();
-    let value = h[colon + 1..].trim().to_string();
-    Ok((key, value))
+    Ok((h[..colon].trim().to_lowercase(), h[colon + 1..].trim().to_string()))
 }
 
-fn validate_run_params(r: &RunParams) -> Result<()> {
+fn validate_run(r: &RunParams) -> Result<()> {
     if r.duration_secs.is_none() && r.requests.is_none() {
         bail!("\"run\" must specify either \"duration_secs\" or \"requests\"");
     }
@@ -177,23 +142,14 @@ fn validate_run_params(r: &RunParams) -> Result<()> {
     Ok(())
 }
 
-fn validate_node(node: &ScenarioNode) -> Result<()> {
-    match node {
-        ScenarioNode::Request(r) => {
-            if r.url.is_empty() {
-                bail!("Request '{}' has an empty URL", r.name);
-            }
-        }
-        ScenarioNode::Group(g) => {
-            if g.steps.is_empty() {
-                bail!("Group '{}' has no steps", g.name);
-            }
-            for step in &g.steps {
-                validate_node(step)?;
-            }
+fn validate_scenario(s: &Scenario) -> Result<()> {
+    if s.steps.is_empty() {
+        bail!("Scenario \"{}\" has no steps", s.name);
+    }
+    for (i, step) in s.steps.iter().enumerate() {
+        if step.url.is_empty() {
+            bail!("Step #{i} \"{}\" has an empty URL", step.name);
         }
     }
     Ok(())
 }
-
-
