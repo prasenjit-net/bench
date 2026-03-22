@@ -96,12 +96,11 @@ const TEMPLATE: &str = r#"<!DOCTYPE html>
     <!-- Latency histogram -->
     <div class="chart-box">
       <h3>Latency Distribution</h3>
-      {% set max_count = s.latency_histogram | map(attribute="1") | sort | last | default(value=1) %}
       {% for bucket in s.latency_histogram %}
       <div class="bar-row">
         <div class="bar-label">{{ bucket.0 }}</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:{{ bucket.1 * 100 / max_count | round }}%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:{{ bucket.1 * 100 / s.latency_chart_max }}%;background:#5c6bc0;"></div>
         </div>
         <div class="bar-count">{{ bucket.1 }}</div>
       </div>
@@ -111,12 +110,11 @@ const TEMPLATE: &str = r#"<!DOCTYPE html>
     <!-- Status code distribution -->
     <div class="chart-box">
       <h3>Status Code Distribution</h3>
-      {% set max_sc = s.status_distribution_sorted | map(attribute="1") | sort | last | default(value=1) %}
       {% for pair in s.status_distribution_sorted %}
       <div class="bar-row">
         <div class="bar-label">HTTP {{ pair.0 }}</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:{{ pair.1 * 100 / max_sc | round }}%;background:{% if pair.0 < 300 %}#4caf50{% elif pair.0 < 400 %}#ffa726{% elif pair.0 < 500 %}#ef5350{% else %}#b71c1c{% endif %};"></div>
+          <div class="bar-fill" style="width:{{ pair.1 * 100 / s.status_chart_max }}%;background:{% if pair.0 < 300 %}#4caf50{% elif pair.0 < 400 %}#ffa726{% elif pair.0 < 500 %}#ef5350{% else %}#b71c1c{% endif %};"></div>
         </div>
         <div class="bar-count">{{ pair.1 }}</div>
       </div>
@@ -125,7 +123,7 @@ const TEMPLATE: &str = r#"<!DOCTYPE html>
       <div class="bar-row">
         <div class="bar-label">Network Err</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:{{ s.error_requests * 100 / max_sc | round }}%;background:#78909c;"></div>
+          <div class="bar-fill" style="width:{{ s.error_requests * 100 / s.status_chart_max }}%;background:#78909c;"></div>
         </div>
         <div class="bar-count">{{ s.error_requests }}</div>
       </div>
@@ -157,12 +155,11 @@ const TEMPLATE: &str = r#"<!DOCTYPE html>
   {% if s.timeline | length > 1 %}
   <div class="section-title">Throughput Timeline (req/s per second)</div>
   <div class="chart-box" style="margin-top:.25rem;">
-    {% set max_tl = s.timeline | map(attribute="1") | sort | last | default(value=1) %}
     {% for point in s.timeline %}
     <div class="bar-row">
       <div class="bar-label">{{ point.0 }}s</div>
       <div class="bar-track">
-        <div class="bar-fill" style="width:{{ point.1 * 100 / max_tl | round }}%;background:#26a69a;"></div>
+        <div class="bar-fill" style="width:{{ point.1 * 100 / s.timeline_chart_max }}%;background:#26a69a;"></div>
       </div>
       <div class="bar-count">{{ point.1 }}</div>
     </div>
@@ -218,6 +215,10 @@ struct ScenarioView<'a> {
     error_distribution_sorted: Vec<(String, u64)>,
     timeline: &'a Vec<(u64, u64)>,
     latency_histogram: &'a Vec<(String, u64)>,
+    /// Pre-computed chart max values (safe for Tera integer math)
+    status_chart_max: u64,
+    latency_chart_max: u64,
+    timeline_chart_max: u64,
 }
 
 pub fn generate(results: &[ScenarioResult], output_path: &str) -> Result<()> {
@@ -238,6 +239,31 @@ pub fn generate(results: &[ScenarioResult], output_path: &str) -> Result<()> {
             let mut error_sorted: Vec<(String, u64)> =
                 r.error_distribution.iter().map(|(k, &v)| (k.clone(), v)).collect();
             error_sorted.sort_by(|a, b| b.1.cmp(&a.1));
+
+            // Pre-compute chart max values in Rust to avoid Tera math issues on empty arrays
+            let status_chart_max = status_sorted
+                .iter()
+                .map(|(_, c)| *c)
+                .max()
+                .unwrap_or(0)
+                .max(r.error_requests)
+                .max(1);
+
+            let latency_chart_max = r
+                .latency_histogram
+                .iter()
+                .map(|(_, c)| *c)
+                .max()
+                .unwrap_or(1)
+                .max(1);
+
+            let timeline_chart_max = r
+                .timeline
+                .iter()
+                .map(|(_, c)| *c)
+                .max()
+                .unwrap_or(1)
+                .max(1);
 
             ScenarioView {
                 name: &r.name,
@@ -265,6 +291,9 @@ pub fn generate(results: &[ScenarioResult], output_path: &str) -> Result<()> {
                 error_distribution_sorted: error_sorted,
                 timeline: &r.timeline,
                 latency_histogram: &r.latency_histogram,
+                status_chart_max,
+                latency_chart_max,
+                timeline_chart_max,
             }
         })
         .collect();
