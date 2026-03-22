@@ -102,9 +102,9 @@ impl Cli {
                     bail!("{ctx}: has no steps");
                 }
                 let steps = sref.steps.iter().map(|step_name| {
-                    sf.steps.get(step_name)
+                    sf.requests.get(step_name)
                         .ok_or_else(|| anyhow::anyhow!(
-                            "{ctx}: step \"{step_name}\" not found in the top-level \"steps\" map"
+                            "{ctx}: step \"{step_name}\" not found in the top-level \"requests\" map"
                         ))
                         .map(|def| def.clone().into_step(step_name.clone()))
                 }).collect::<Result<Vec<Step>>>()?;

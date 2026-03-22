@@ -16,10 +16,10 @@ pub struct Step {
 
 fn default_method() -> String { "GET".to_string() }
 
-/// A step definition as declared in the `steps` library of a scenario file.
+/// A request definition as declared in the `requests` library of a scenario file.
 /// The map key becomes the step's `name` at resolution time.
 #[derive(Debug, Clone, Deserialize)]
-pub struct StepDef {
+pub struct RequestDef {
     pub url: String,
     #[serde(default = "default_method")]
     pub method: String,
@@ -28,7 +28,7 @@ pub struct StepDef {
     pub body: Option<String>,
 }
 
-impl StepDef {
+impl RequestDef {
     pub fn into_step(self, name: String) -> Step {
         Step { name, url: self.url, method: self.method, headers: self.headers, body: self.body }
     }
@@ -95,9 +95,9 @@ pub struct ScenarioRef {
 pub struct ScenarioFile {
     /// Global run defaults — inherited by any scenario that omits its own `run`.
     pub run: Option<RunParams>,
-    /// Named step library — define once, reference from any scenario.
+    /// Named request library — define once, reference by name from any scenario's steps.
     #[serde(default)]
-    pub steps: HashMap<String, StepDef>,
+    pub requests: HashMap<String, RequestDef>,
     pub scenarios: Vec<ScenarioRef>,
 }
 
