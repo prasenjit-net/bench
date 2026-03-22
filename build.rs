@@ -7,9 +7,12 @@ fn main() {
     println!("cargo:rerun-if-changed=ui/package.json");
     println!("cargo:rerun-if-changed=ui/vite.config.ts");
 
-    // Allow skipping the UI build for faster Rust-only iteration
-    if std::env::var("SKIP_UI_BUILD").is_ok() {
-        // Ensure dist/ exists so rust-embed doesn't fail
+    // Skip if UI was already built (dist exists) or explicitly disabled.
+    // `cross` runs in Docker where SKIP_UI_BUILD may not be forwarded,
+    // but the pre-built ui/dist artifact is mounted into the container.
+    if std::env::var("SKIP_UI_BUILD").is_ok()
+        || std::path::Path::new("ui/dist/index.html").exists()
+    {
         std::fs::create_dir_all("ui/dist").unwrap();
         return;
     }
