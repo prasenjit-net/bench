@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_NO_WARNINGS: 1
 
 jobs:
   build-and-test:

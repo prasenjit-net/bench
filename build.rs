@@ -9,7 +9,6 @@ fn main() {
 
     // Allow skipping the UI build for faster Rust-only iteration
     if std::env::var("SKIP_UI_BUILD").is_ok() {
-        println!("cargo:warning=Skipping UI build (SKIP_UI_BUILD set)");
         // Ensure dist/ exists so rust-embed doesn't fail
         std::fs::create_dir_all("ui/dist").unwrap();
         return;

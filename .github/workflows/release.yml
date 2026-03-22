@@ -9,6 +9,7 @@ env:
   CARGO_TERM_COLOR: always
   BIN_NAME: bench
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_NO_WARNINGS: 1
 
 jobs:
   # ── Build the React UI once; share it across all platform jobs ──────────────
@@ -109,20 +110,20 @@ jobs:
 
       # Install `cross` for targets that need Docker-based cross-compilation
       - name: Install cross
-        if: matrix.use_cross == true
+        if: matrix.use_cross
         uses: taiki-e/install-action@v2
         with:
           tool: cross
 
       # Build with cargo or cross
       - name: Build (cargo)
-        if: matrix.use_cross == false
+        if: ${{ !matrix.use_cross }}
         env:
           SKIP_UI_BUILD: "1"
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Build (cross)
-        if: matrix.use_cross == true
+        if: matrix.use_cross
         env:
           SKIP_UI_BUILD: "1"
         run: cross build --release --target ${{ matrix.target }}
