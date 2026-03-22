@@ -11,8 +11,14 @@ export default function App() {
   useEffect(() => {
     fetch('/api/mode')
       .then(r => r.json())
-      .then((data: { mode: AppMode }) => setMode(data.mode))
-      .catch(() => setMode('editor')) // fall back to editor
+      .then((data: { mode: AppMode }) => {
+        setMode(data.mode)
+        document.title = data.mode === 'report' ? 'bench — Report Viewer' : 'bench — Scenario Editor'
+      })
+      .catch(() => {
+        setMode('editor')
+        document.title = 'bench — Scenario Editor'
+      })
   }, [])
 
   if (mode === null) {
