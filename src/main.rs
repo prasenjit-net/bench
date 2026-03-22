@@ -1,17 +1,27 @@
 mod cli;
 mod config;
+mod editor;
 mod report;
 mod runner;
 mod stats;
 
 use anyhow::Result;
 use clap::Parser;
-use cli::Cli;
+use cli::{Cli, Command};
 use report::{generate_report, ScenarioGroup};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
+
+    // ── edit subcommand ────────────────────────────────────────────────────────
+    if let Command::Edit { file } = args.command {
+        let path = std::path::PathBuf::from(file);
+        editor::run_editor(path).await?;
+        return Ok(());
+    }
+
+    // ── run subcommand (default) ───────────────────────────────────────────────
     let cfg = args.into_run_config()?;
 
     println!("\n🚀 bench — {} scenario(s)\n", cfg.scenarios.len());
