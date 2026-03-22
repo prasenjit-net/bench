@@ -4,8 +4,6 @@ use std::time::Duration;
 use hdrhistogram::Histogram;
 use serde::Serialize;
 
-use crate::config::Scenario;
-
 /// Per-request outcome from the runner
 #[derive(Debug)]
 pub struct RequestOutcome {
@@ -14,11 +12,11 @@ pub struct RequestOutcome {
     pub status_code: Option<u16>,
     /// Error kind string if the request failed at transport level
     pub error: Option<String>,
-    /// Milliseconds since scenario start (for timeline chart)
+    /// Milliseconds since test-run start (for timeline chart)
     pub offset_ms: u64,
 }
 
-/// Aggregated statistics for one scenario
+/// Aggregated statistics for one leaf request node across all iterations
 #[derive(Debug, Serialize)]
 pub struct ScenarioResult {
     pub name: String,
@@ -59,8 +57,14 @@ pub struct ScenarioResult {
 }
 
 impl ScenarioResult {
+    /// Build stats from a flat list of per-request outcomes.
+    /// `name`, `url`, `method` come from the leaf RequestNode;
+    /// `elapsed` is the total wall-clock duration of the whole test run.
     pub fn from_outcomes(
-        scenario: &Scenario,
+        name: &str,
+        url: &str,
+        method: &str,
+        concurrency: usize,
         outcomes: Vec<RequestOutcome>,
         elapsed: Duration,
     ) -> Self {
@@ -134,10 +138,10 @@ impl ScenarioResult {
         let latency_histogram = build_latency_histogram(&histogram);
 
         ScenarioResult {
-            name: scenario.name.clone(),
-            url: scenario.url.clone(),
-            method: scenario.method.clone(),
-            concurrency: scenario.concurrency,
+            name: name.to_string(),
+            url: url.to_string(),
+            method: method.to_string(),
+            concurrency,
             total_requests: total,
             successful_requests: successful,
             failed_requests: failed,

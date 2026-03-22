@@ -15,11 +15,40 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
     let run_config = args.into_run_config()?;
 
+    // Print the scenario tree so the user knows what will run
     println!("\n🚀 bench — scenario tree:");
     print_tree(&run_config.root, 0);
-    println!();
 
-    let results = runner::execute_node(&run_config.root, &run_config.run_params, 0).await?;
+    let run = &run_config.run_params;
+    let iter_desc = match (run.requests, run.duration_secs) {
+        (Some(n), _) => format!("{n} iterations"),
+        (_, Some(s)) => format!("{s}s duration"),
+        _ => "?".to_string(),
+    };
+    println!(
+        "\n  concurrency: {}  ·  {}  ·  timeout: {}ms\n",
+        run.concurrency, iter_desc, run.timeout_ms
+    );
+
+    let results = runner::run_scenario_tree(&run_config.root, &run_config.run_params).await?;
+
+    // Print per-leaf summary
+    println!();
+    for r in &results {
+        println!(
+            "  ✓ {}  [{} {}]",
+            r.name, r.method, r.url
+        );
+        println!(
+            "    {:.1} req/s  |  {} total  |  {} success  |  {} failed  |  {} errors  |  p99: {:.2}ms",
+            r.throughput_rps,
+            r.total_requests,
+            r.successful_requests,
+            r.failed_requests,
+            r.error_requests,
+            r.latency_p99_ms,
+        );
+    }
 
     println!(
         "\n📄 Generating {} report → {}",
@@ -32,21 +61,21 @@ async fn main() -> Result<()> {
 
     generate_report(&results, &run_config.output_format, &run_config.output_path)?;
 
-    let total: u64 = results.iter().map(|r| r.total_requests).sum();
-    let success: u64 = results.iter().map(|r| r.successful_requests).sum();
-    let errors: u64 = results.iter().map(|r| r.error_requests).sum();
+    let total_reqs: u64 = results.iter().map(|r| r.total_requests).sum();
+    let total_success: u64 = results.iter().map(|r| r.successful_requests).sum();
+    let total_errors: u64 = results.iter().map(|r| r.error_requests).sum();
     println!(
-        "✅ Done! {} scenarios  |  {} total requests  |  {} success  |  {} errors",
+        "✅ Done!  {} leaf endpoint(s)  ·  {} requests total  ·  {} success  ·  {} errors",
         results.len(),
-        total,
-        success,
-        errors
+        total_reqs,
+        total_success,
+        total_errors,
     );
 
     Ok(())
 }
 
-/// Recursively print the scenario tree before execution so the user knows what will run.
+/// Print the scenario tree in a readable indented format before execution.
 fn print_tree(node: &ScenarioNode, depth: usize) {
     let indent = "  ".repeat(depth);
     match node {
@@ -57,9 +86,10 @@ fn print_tree(node: &ScenarioNode, depth: usize) {
             }
         }
         ScenarioNode::Request(r) => {
-            println!("{}→ {} {}  ({})", indent, r.method, r.url, r.name);
+            println!("{}→ {} {}  ({})", indent, r.method.to_uppercase(), r.url, r.name);
         }
     }
 }
+
 
 

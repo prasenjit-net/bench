@@ -1,29 +1,29 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashMap;
 
-// ── Public tree node types ────────────────────────────────────────────────────
+// ── Scenario tree node types ──────────────────────────────────────────────────
 
 /// A node in the scenario tree: either a group (parallel/sequential) or a leaf request.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum ScenarioNode {
-    /// Branch node — contains child steps run in `mode` order.
+    /// Branch node — children run in `mode` order.
     Group(GroupNode),
-    /// Leaf node — a single HTTP endpoint to benchmark.
+    /// Leaf node — one HTTP endpoint to benchmark.
     Request(RequestNode),
 }
 
-/// Branch node: runs its `steps` either in parallel or sequentially.
+/// Branch node: runs its `steps` either sequentially or in parallel.
 #[derive(Debug, Clone, Deserialize)]
 pub struct GroupNode {
     pub name: String,
     #[serde(default)]
     pub mode: ExecutionMode,
-    /// Must be present and non-empty to distinguish from a RequestNode.
+    /// Must be present to disambiguate from a RequestNode during deserialization.
     pub steps: Vec<ScenarioNode>,
 }
 
-/// Leaf node: the HTTP request specification.
+/// Leaf node: HTTP request specification.
 #[derive(Debug, Clone, Deserialize)]
 pub struct RequestNode {
     pub name: String,
@@ -35,24 +35,7 @@ pub struct RequestNode {
     pub body: Option<String>,
 }
 
-impl RequestNode {
-    /// Merge this request spec with global run parameters to produce a runnable Scenario.
-    pub fn into_scenario(self, run: &RunParams) -> Scenario {
-        Scenario {
-            name: self.name,
-            url: self.url,
-            method: self.method.to_uppercase(),
-            headers: self.headers,
-            body: self.body,
-            concurrency: run.concurrency,
-            duration_secs: run.duration_secs,
-            requests: run.requests,
-            timeout_ms: run.timeout_ms,
-        }
-    }
-}
-
-/// How child steps in a GroupNode are executed.
+/// How child steps within a GroupNode are executed in one iteration.
 #[derive(Debug, Clone, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ExecutionMode {
@@ -72,15 +55,21 @@ impl std::fmt::Display for ExecutionMode {
 
 // ── Global run parameters ─────────────────────────────────────────────────────
 
-/// Global execution parameters — specified once and applied to every leaf request.
+/// Global execution parameters — drive how many times the full scenario tree repeats.
+///
+/// One "iteration" = traverse the entire tree once, firing each leaf request exactly once.
+/// `concurrency` workers each run their share of iterations in parallel with each other.
+/// Within one iteration, sequential/parallel ordering is determined by the tree structure.
 #[derive(Debug, Clone, Deserialize)]
 pub struct RunParams {
+    /// Number of parallel workers; each runs its share of total iterations.
     #[serde(default = "default_concurrency")]
     pub concurrency: usize,
-    /// Run each scenario for this many seconds (mutually exclusive with `requests`).
+    /// Repeat the full tree for this many seconds total (mutually exclusive with `requests`).
     pub duration_secs: Option<u64>,
-    /// Send exactly this many requests per scenario (mutually exclusive with `duration_secs`).
+    /// Repeat the full tree exactly this many times total (mutually exclusive with `duration_secs`).
     pub requests: Option<u64>,
+    /// Per-request timeout in milliseconds.
     #[serde(default = "default_timeout_ms")]
     pub timeout_ms: u64,
     /// Output format: "html" (default) or "pdf".
@@ -102,36 +91,18 @@ fn default_timeout_ms() -> u64 {
 
 // ── Top-level JSON file ───────────────────────────────────────────────────────
 
-/// The top-level JSON scenario file format.
+/// Top-level JSON scenario file structure.
 #[derive(Debug, Deserialize)]
 pub struct ScenarioFile {
     pub run: RunParams,
-    /// Single root node — may be a Group (parallel/sequential) or a lone Request.
+    /// Single root node: a Group (parallel|sequential) or a lone Request.
     pub scenario: ScenarioNode,
-}
-
-// ── Internal runner representation ───────────────────────────────────────────
-
-/// Fully resolved, runnable scenario — a RequestNode merged with RunParams.
-/// Used internally by the runner; never deserialized directly from user JSON.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Scenario {
-    pub name: String,
-    pub url: String,
-    pub method: String,
-    pub headers: HashMap<String, String>,
-    pub body: Option<String>,
-    pub concurrency: usize,
-    pub duration_secs: Option<u64>,
-    pub requests: Option<u64>,
-    pub timeout_ms: u64,
 }
 
 // ── Resolved runtime configuration ───────────────────────────────────────────
 
 #[derive(Debug)]
 pub struct RunConfig {
-    /// The root scenario node to execute.
     pub root: ScenarioNode,
     pub run_params: RunParams,
     pub output_format: OutputFormat,
@@ -159,4 +130,3 @@ impl OutputFormat {
         }
     }
 }
-
