@@ -99,10 +99,11 @@ async fn serve_index() -> Response {
 }
 
 async fn serve_asset(axum::extract::Path(path): axum::extract::Path<String>) -> Response {
-    // Try exact path first, then fall back to index.html for SPA routing
-    match UiAssets::get(&path) {
-        Some(_) => embedded_file(&path),
-        None => embedded_file("index.html"),
+    // Route is /assets/*path so prepend the directory for the embed lookup
+    let full = format!("assets/{path}");
+    match UiAssets::get(&full) {
+        Some(_) => embedded_file(&full),
+        None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
@@ -130,7 +131,7 @@ pub async fn run_editor(file_path: PathBuf) -> Result<()> {
     let app = Router::new()
         .route("/api/scenario", get(get_scenario).put(put_scenario))
         .route("/", get(serve_index))
-        .route("/assets/{*path}", get(serve_asset))
+        .route("/assets/*path", get(serve_asset))
         .fallback(serve_index)
         .with_state(state)
         .layer(cors);
