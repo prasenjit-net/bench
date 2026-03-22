@@ -1,0 +1,191 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]*"
+
+env:
+  CARGO_TERM_COLOR: always
+  BIN_NAME: bench
+
+jobs:
+  # ── Build the React UI once; share it across all platform jobs ──────────────
+  build-ui:
+    name: Build UI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build UI
+        working-directory: ui
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload ui/dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-dist
+          path: ui/dist/
+          retention-days: 1
+
+  # ── Build release binaries ───────────────────────────────────────────────────
+  build-binary:
+    name: Build ${{ matrix.target }}
+    needs: build-ui
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── Linux ──────────────────────────────────────────────────────────
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            use_cross: true
+            archive: tar.gz
+
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            use_cross: true
+            archive: tar.gz
+
+          # ── macOS ──────────────────────────────────────────────────────────
+          - target: x86_64-apple-darwin
+            os: macos-13          # last Intel GitHub runner
+            use_cross: false
+            archive: tar.gz
+
+          - target: aarch64-apple-darwin
+            os: macos-latest      # Apple Silicon runner
+            use_cross: false
+            archive: tar.gz
+
+          # ── Windows ────────────────────────────────────────────────────────
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            use_cross: false
+            archive: zip
+
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            use_cross: false      # cargo cross-compiles MSVC → ARM natively
+            archive: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download the pre-built UI dist so we don't need Node on every runner
+      - name: Download ui/dist
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-dist
+          path: ui/dist/
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.target }}-cargo-
+            ${{ runner.os }}-cargo-
+
+      # Install `cross` for targets that need Docker-based cross-compilation
+      - name: Install cross
+        if: matrix.use_cross == true
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      # Build with cargo or cross
+      - name: Build (cargo)
+        if: matrix.use_cross == false
+        env:
+          SKIP_UI_BUILD: "1"
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build (cross)
+        if: matrix.use_cross == true
+        env:
+          SKIP_UI_BUILD: "1"
+        run: cross build --release --target ${{ matrix.target }}
+
+      # ── Package ─────────────────────────────────────────────────────────────
+      - name: Set archive name (Unix)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          echo "ARCHIVE=${{ env.BIN_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Set archive name (Windows)
+        if: matrix.archive == 'zip'
+        shell: bash
+        run: |
+          echo "ARCHIVE=${{ env.BIN_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.zip" >> "$GITHUB_ENV"
+
+      - name: Package (tar.gz)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          BIN=target/${{ matrix.target }}/release/${{ env.BIN_NAME }}
+          tar czf "$ARCHIVE" -C "$(dirname $BIN)" "$(basename $BIN)"
+
+      - name: Package (zip)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $bin = "target\${{ matrix.target }}\release\${{ env.BIN_NAME }}.exe"
+          Compress-Archive -Path $bin -DestinationPath "$env:ARCHIVE"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 1
+
+  # ── Create GitHub Release ────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: build-binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          pattern: "bench-*"
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -lh dist/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "bench ${{ github.ref_name }}"
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          files: dist/*
