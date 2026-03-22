@@ -63,13 +63,13 @@
 </head>
 <body>
 <h1>🚀 HTTP Benchmark Report</h1>
-<p class="meta">Generated 2026-03-22 04:11:53 &nbsp;·&nbsp; 3 scenario(s)</p>
+<p class="meta">Generated 2026-03-22 12:27:21 &nbsp;·&nbsp; 3 scenario(s)</p>
 
 
 <div class="scenario-group">
   <div class="group-header">
     <h2>Warm Up</h2>
-    <span class="group-meta">20 runs &nbsp;·&nbsp; concurrency 2 &nbsp;·&nbsp; 2 step(s)</span>
+    <span class="group-meta">20000 runs &nbsp;·&nbsp; concurrency 2 &nbsp;·&nbsp; 2 step(s)</span>
   </div>
 
   
@@ -82,15 +82,15 @@
 
   <div class="kv-grid">
     <div class="kv"><div class="label">Total Requests</div>
-      <div class="value">20</div></div>
+      <div class="value">20000</div></div>
     <div class="kv"><div class="label">Throughput</div>
-      <div class="value">1853.2 req/s</div></div>
+      <div class="value">9150.4 req/s</div></div>
     <div class="kv"><div class="label">Duration</div>
-      <div class="value">0.01s</div></div>
+      <div class="value">2.19s</div></div>
     <div class="kv"><div class="label">Concurrency</div>
       <div class="value">2</div></div>
     <div class="kv"><div class="label">Successful</div>
-      <div class="value green">20</div></div>
+      <div class="value green">20000</div></div>
     <div class="kv"><div class="label">Failed (4xx/5xx)</div>
       <div class="value green">0</div></div>
     <div class="kv"><div class="label">Errors (network)</div>
@@ -110,15 +110,15 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">17</div>
+        <div class="bar-count">19993</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤1ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:5.882352941176471%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.02500875306357225%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">1</div>
+        <div class="bar-count">5</div>
       </div>
       
       <div class="bar-row">
@@ -132,9 +132,9 @@
       <div class="bar-row">
         <div class="bar-label">≤5ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:11.764705882352942%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">2</div>
+        <div class="bar-count">0</div>
       </div>
       
       <div class="bar-row">
@@ -148,9 +148,9 @@
       <div class="bar-row">
         <div class="bar-label">≤25ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.010003501225428901%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">0</div>
+        <div class="bar-count">2</div>
       </div>
       
       <div class="bar-row">
@@ -228,7 +228,7 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#4caf50;"></div>
         </div>
-        <div class="bar-count">20</div>
+        <div class="bar-count">20000</div>
       </div>
       
       
@@ -242,20 +242,49 @@
       <th>p50</th><th>p75</th><th>p90</th><th>p95</th><th>p99</th><th>p99.9</th><th>Max</th></tr></thead>
     <tbody><tr>
       <td>ms</td>
-      <td>0.18</td>
-      <td>0.71</td>
-      <td>1.36</td>
-      <td>0.23</td>
-      <td>0.32</td>
-      <td>0.5</td>
-      <td>4.75</td>
-      <td>4.82</td>
-      <td>4.82</td>
-      <td>4.82</td>
+      <td>0.07</td>
+      <td>0.11</td>
+      <td>0.12</td>
+      <td>0.11</td>
+      <td>0.11</td>
+      <td>0.11</td>
+      <td>0.13</td>
+      <td>0.19</td>
+      <td>0.4</td>
+      <td>11.39</td>
     </tr></tbody>
   </table>
 
   <!-- Throughput timeline -->
+  
+  <div class="section-title">Throughput Timeline (req/s per second)</div>
+  <div class="chart-box" style="margin-top:.25rem;">
+    
+    <div class="bar-row">
+      <div class="bar-label">0s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.41900647948164%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">9021</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">1s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">9260</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">2s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:18.563714902807774%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">1719</div>
+    </div>
+    
+  </div>
   
 
   <!-- Error breakdown -->
@@ -271,15 +300,15 @@
 
   <div class="kv-grid">
     <div class="kv"><div class="label">Total Requests</div>
-      <div class="value">20</div></div>
+      <div class="value">20000</div></div>
     <div class="kv"><div class="label">Throughput</div>
-      <div class="value">1853.2 req/s</div></div>
+      <div class="value">9150.4 req/s</div></div>
     <div class="kv"><div class="label">Duration</div>
-      <div class="value">0.01s</div></div>
+      <div class="value">2.19s</div></div>
     <div class="kv"><div class="label">Concurrency</div>
       <div class="value">2</div></div>
     <div class="kv"><div class="label">Successful</div>
-      <div class="value green">20</div></div>
+      <div class="value green">20000</div></div>
     <div class="kv"><div class="label">Failed (4xx/5xx)</div>
       <div class="value green">0</div></div>
     <div class="kv"><div class="label">Errors (network)</div>
@@ -299,15 +328,15 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">20</div>
+        <div class="bar-count">19995</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤1ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.025006251562890724%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">0</div>
+        <div class="bar-count">5</div>
       </div>
       
       <div class="bar-row">
@@ -417,7 +446,7 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#4caf50;"></div>
         </div>
-        <div class="bar-count">20</div>
+        <div class="bar-count">20000</div>
       </div>
       
       
@@ -431,20 +460,49 @@
       <th>p50</th><th>p75</th><th>p90</th><th>p95</th><th>p99</th><th>p99.9</th><th>Max</th></tr></thead>
     <tbody><tr>
       <td>ms</td>
-      <td>0.18</td>
-      <td>0.28</td>
-      <td>0.09</td>
-      <td>0.25</td>
-      <td>0.33</td>
-      <td>0.42</td>
-      <td>0.48</td>
-      <td>0.49</td>
-      <td>0.49</td>
-      <td>0.49</td>
+      <td>0.07</td>
+      <td>0.11</td>
+      <td>0.02</td>
+      <td>0.11</td>
+      <td>0.11</td>
+      <td>0.11</td>
+      <td>0.13</td>
+      <td>0.2</td>
+      <td>0.39</td>
+      <td>0.78</td>
     </tr></tbody>
   </table>
 
   <!-- Throughput timeline -->
+  
+  <div class="section-title">Throughput Timeline (req/s per second)</div>
+  <div class="chart-box" style="margin-top:.25rem;">
+    
+    <div class="bar-row">
+      <div class="bar-label">0s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.42952802678475%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">9021</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">1s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">9259</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">2s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:18.576520142563993%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">1720</div>
+    </div>
+    
+  </div>
   
 
   <!-- Error breakdown -->
@@ -456,7 +514,7 @@
 <div class="scenario-group">
   <div class="group-header">
     <h2>Steady State</h2>
-    <span class="group-meta">200 runs &nbsp;·&nbsp; concurrency 10 &nbsp;·&nbsp; 2 step(s)</span>
+    <span class="group-meta">200000 runs &nbsp;·&nbsp; concurrency 10 &nbsp;·&nbsp; 2 step(s)</span>
   </div>
 
   
@@ -469,15 +527,15 @@
 
   <div class="kv-grid">
     <div class="kv"><div class="label">Total Requests</div>
-      <div class="value">200</div></div>
+      <div class="value">200000</div></div>
     <div class="kv"><div class="label">Throughput</div>
-      <div class="value">9796.3 req/s</div></div>
+      <div class="value">18141.5 req/s</div></div>
     <div class="kv"><div class="label">Duration</div>
-      <div class="value">0.02s</div></div>
+      <div class="value">11.02s</div></div>
     <div class="kv"><div class="label">Concurrency</div>
       <div class="value">10</div></div>
     <div class="kv"><div class="label">Successful</div>
-      <div class="value green">200</div></div>
+      <div class="value green">200000</div></div>
     <div class="kv"><div class="label">Failed (4xx/5xx)</div>
       <div class="value green">0</div></div>
     <div class="kv"><div class="label">Errors (network)</div>
@@ -497,31 +555,31 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">179</div>
+        <div class="bar-count">199818</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤1ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:5.027932960893855%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.07556876757849643%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">9</div>
+        <div class="bar-count">151</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤2ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:2.793296089385475%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.01501366243281386%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">5</div>
+        <div class="bar-count">30</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤5ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:3.910614525139665%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.0005004554144271287%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">7</div>
+        <div class="bar-count">1</div>
       </div>
       
       <div class="bar-row">
@@ -615,7 +673,7 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#4caf50;"></div>
         </div>
-        <div class="bar-count">200</div>
+        <div class="bar-count">200000</div>
       </div>
       
       
@@ -629,20 +687,121 @@
       <th>p50</th><th>p75</th><th>p90</th><th>p95</th><th>p99</th><th>p99.9</th><th>Max</th></tr></thead>
     <tbody><tr>
       <td>ms</td>
+      <td>0.06</td>
       <td>0.12</td>
-      <td>0.34</td>
-      <td>0.51</td>
-      <td>0.19</td>
-      <td>0.24</td>
-      <td>0.52</td>
-      <td>1.43</td>
-      <td>2.5</td>
-      <td>3.52</td>
-      <td>3.52</td>
+      <td>0.06</td>
+      <td>0.1</td>
+      <td>0.14</td>
+      <td>0.2</td>
+      <td>0.23</td>
+      <td>0.31</td>
+      <td>0.49</td>
+      <td>2.48</td>
     </tr></tbody>
   </table>
 
   <!-- Throughput timeline -->
+  
+  <div class="section-title">Throughput Timeline (req/s per second)</div>
+  <div class="chart-box" style="margin-top:.25rem;">
+    
+    <div class="bar-row">
+      <div class="bar-label">0s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:93.08309851666755%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17508</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">1s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.36296453825297%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18313</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">2s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.07007283747143%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18446</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">3s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.0695943431336%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18634</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">4s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.6553777446967%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18368</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">5s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.32622680631613%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18118</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">6s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.76123132542932%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18576</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">7s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.77718113668988%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18579</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">8s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:88.73943325003988%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">16691</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">9s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:93.41804455313945%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17571</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">10s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18809</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">11s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:2.0575256526131107%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">387</div>
+    </div>
+    
+  </div>
   
 
   <!-- Error breakdown -->
@@ -658,15 +817,15 @@
 
   <div class="kv-grid">
     <div class="kv"><div class="label">Total Requests</div>
-      <div class="value">200</div></div>
+      <div class="value">200000</div></div>
     <div class="kv"><div class="label">Throughput</div>
-      <div class="value">9796.3 req/s</div></div>
+      <div class="value">18141.5 req/s</div></div>
     <div class="kv"><div class="label">Duration</div>
-      <div class="value">0.02s</div></div>
+      <div class="value">11.02s</div></div>
     <div class="kv"><div class="label">Concurrency</div>
       <div class="value">10</div></div>
     <div class="kv"><div class="label">Successful</div>
-      <div class="value green">200</div></div>
+      <div class="value green">200000</div></div>
     <div class="kv"><div class="label">Failed (4xx/5xx)</div>
       <div class="value green">0</div></div>
     <div class="kv"><div class="label">Errors (network)</div>
@@ -686,31 +845,31 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">177</div>
+        <div class="bar-count">199816</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤1ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:7.344632768361582%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.0795732073507627%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">13</div>
+        <div class="bar-count">159</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤2ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:3.9548022598870056%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.012011050166152861%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">7</div>
+        <div class="bar-count">24</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤5ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:1.694915254237288%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.0005004604235897025%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">3</div>
+        <div class="bar-count">1</div>
       </div>
       
       <div class="bar-row">
@@ -804,7 +963,7 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#4caf50;"></div>
         </div>
-        <div class="bar-count">200</div>
+        <div class="bar-count">200000</div>
       </div>
       
       
@@ -818,20 +977,121 @@
       <th>p50</th><th>p75</th><th>p90</th><th>p95</th><th>p99</th><th>p99.9</th><th>Max</th></tr></thead>
     <tbody><tr>
       <td>ms</td>
+      <td>0.06</td>
       <td>0.12</td>
-      <td>0.31</td>
-      <td>0.45</td>
-      <td>0.19</td>
-      <td>0.26</td>
-      <td>0.52</td>
-      <td>0.93</td>
-      <td>3.36</td>
-      <td>3.45</td>
-      <td>3.45</td>
+      <td>0.06</td>
+      <td>0.1</td>
+      <td>0.14</td>
+      <td>0.2</td>
+      <td>0.24</td>
+      <td>0.32</td>
+      <td>0.49</td>
+      <td>2.34</td>
     </tr></tbody>
   </table>
 
   <!-- Throughput timeline -->
+  
+  <div class="section-title">Throughput Timeline (req/s per second)</div>
+  <div class="chart-box" style="margin-top:.25rem;">
+    
+    <div class="bar-row">
+      <div class="bar-label">0s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:93.05156831472621%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17503</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">1s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.35247208931419%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18312</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">2s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.0701754385965%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18447</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">3s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.06432748538012%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18634</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">4s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.6608187134503%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18370</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">5s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.30515683147262%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18115</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">6s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.76129718234981%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18577</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">7s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.7666135034556%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18578</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">8s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:88.75598086124401%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">16695</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">9s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:93.39181286549707%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17567</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">10s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18810</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">11s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:2.083997873471558%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">392</div>
+    </div>
+    
+  </div>
   
 
   <!-- Error breakdown -->
@@ -843,7 +1103,7 @@
 <div class="scenario-group">
   <div class="group-header">
     <h2>Over Stress</h2>
-    <span class="group-meta">500 runs &nbsp;·&nbsp; concurrency 50 &nbsp;·&nbsp; 2 step(s)</span>
+    <span class="group-meta">500000 runs &nbsp;·&nbsp; concurrency 50 &nbsp;·&nbsp; 2 step(s)</span>
   </div>
 
   
@@ -856,15 +1116,15 @@
 
   <div class="kv-grid">
     <div class="kv"><div class="label">Total Requests</div>
-      <div class="value">500</div></div>
+      <div class="value">500000</div></div>
     <div class="kv"><div class="label">Throughput</div>
-      <div class="value">11185.2 req/s</div></div>
+      <div class="value">18404.8 req/s</div></div>
     <div class="kv"><div class="label">Duration</div>
-      <div class="value">0.04s</div></div>
+      <div class="value">27.17s</div></div>
     <div class="kv"><div class="label">Concurrency</div>
       <div class="value">50</div></div>
     <div class="kv"><div class="label">Successful</div>
-      <div class="value green">500</div></div>
+      <div class="value green">500000</div></div>
     <div class="kv"><div class="label">Failed (4xx/5xx)</div>
       <div class="value green">0</div></div>
     <div class="kv"><div class="label">Errors (network)</div>
@@ -884,39 +1144,39 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">404</div>
+        <div class="bar-count">499554</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤1ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0.24752475247524752%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.05805178218971323%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">1</div>
+        <div class="bar-count">290</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤2ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:2.9702970297029703%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.018616606012563205%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">12</div>
+        <div class="bar-count">93</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤5ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:20.297029702970296%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.01261124923431701%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">82</div>
+        <div class="bar-count">63</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤10ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0.24752475247524752%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">1</div>
+        <div class="bar-count">0</div>
       </div>
       
       <div class="bar-row">
@@ -1002,7 +1262,7 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#4caf50;"></div>
         </div>
-        <div class="bar-count">500</div>
+        <div class="bar-count">500000</div>
       </div>
       
       
@@ -1016,20 +1276,249 @@
       <th>p50</th><th>p75</th><th>p90</th><th>p95</th><th>p99</th><th>p99.9</th><th>Max</th></tr></thead>
     <tbody><tr>
       <td>ms</td>
-      <td>0.07</td>
-      <td>0.67</td>
-      <td>1.07</td>
-      <td>0.19</td>
-      <td>0.31</td>
-      <td>2.78</td>
-      <td>3.24</td>
-      <td>3.57</td>
-      <td>5.3</td>
-      <td>5.3</td>
+      <td>0.06</td>
+      <td>0.11</td>
+      <td>0.06</td>
+      <td>0.09</td>
+      <td>0.13</td>
+      <td>0.17</td>
+      <td>0.2</td>
+      <td>0.27</td>
+      <td>0.46</td>
+      <td>3.96</td>
     </tr></tbody>
   </table>
 
   <!-- Throughput timeline -->
+  
+  <div class="section-title">Throughput Timeline (req/s per second)</div>
+  <div class="chart-box" style="margin-top:.25rem;">
+    
+    <div class="bar-row">
+      <div class="bar-label">0s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:91.23012909420676%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17102</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">1s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.33852555211779%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18622</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">2s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.30854582310893%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18054</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">3s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.19982929691668%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18596</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">4s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.77840605995945%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18517</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">5s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.18873359650058%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18219</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">6s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.7624026458978%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18514</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">7s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:95.57238877627228%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17916</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">8s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.72260748959778%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18694</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">9s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.45588392190334%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18644</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">10s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.9010989010989%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18540</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">11s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:95.32166862263949%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17869</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">12s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.29787688040115%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18052</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">13s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.74639923183612%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18511</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">14s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.71193854689%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18692</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">15s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.02091112770725%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18375</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">16s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.26384295316335%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18608</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">17s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.93310572922223%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18546</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">18s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.45791102101782%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18082</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">19s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18746</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">20s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.11447775525446%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18580</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">21s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.89864504427611%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18727</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">22s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.41320815107223%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18636</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">23s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.54656993491945%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18661</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">24s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.33852555211779%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18622</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">25s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.6072762189267%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18110</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">26s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.45054945054945%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18643</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">27s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:16.654219566840926%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">3122</div>
+    </div>
+    
+  </div>
   
 
   <!-- Error breakdown -->
@@ -1045,15 +1534,15 @@
 
   <div class="kv-grid">
     <div class="kv"><div class="label">Total Requests</div>
-      <div class="value">500</div></div>
+      <div class="value">500000</div></div>
     <div class="kv"><div class="label">Throughput</div>
-      <div class="value">11185.2 req/s</div></div>
+      <div class="value">18404.8 req/s</div></div>
     <div class="kv"><div class="label">Duration</div>
-      <div class="value">0.04s</div></div>
+      <div class="value">27.17s</div></div>
     <div class="kv"><div class="label">Concurrency</div>
       <div class="value">50</div></div>
     <div class="kv"><div class="label">Successful</div>
-      <div class="value green">500</div></div>
+      <div class="value green">500000</div></div>
     <div class="kv"><div class="label">Failed (4xx/5xx)</div>
       <div class="value green">0</div></div>
     <div class="kv"><div class="label">Errors (network)</div>
@@ -1073,39 +1562,39 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">436</div>
+        <div class="bar-count">499576</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤1ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:2.522935779816514%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.057849055999487566%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">11</div>
+        <div class="bar-count">289</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤2ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0.9174311926605505%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.02161833234582926%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">4</div>
+        <div class="bar-count">108</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤5ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:10.779816513761467%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0.005404583086457315%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">47</div>
+        <div class="bar-count">27</div>
       </div>
       
       <div class="bar-row">
         <div class="bar-label">≤10ms</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:0.45871559633027525%;background:#5c6bc0;"></div>
+          <div class="bar-fill" style="width:0%;background:#5c6bc0;"></div>
         </div>
-        <div class="bar-count">2</div>
+        <div class="bar-count">0</div>
       </div>
       
       <div class="bar-row">
@@ -1191,7 +1680,7 @@
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:#4caf50;"></div>
         </div>
-        <div class="bar-count">500</div>
+        <div class="bar-count">500000</div>
       </div>
       
       
@@ -1205,20 +1694,249 @@
       <th>p50</th><th>p75</th><th>p90</th><th>p95</th><th>p99</th><th>p99.9</th><th>Max</th></tr></thead>
     <tbody><tr>
       <td>ms</td>
-      <td>0.07</td>
-      <td>0.49</td>
-      <td>0.94</td>
+      <td>0.06</td>
+      <td>0.11</td>
+      <td>0.05</td>
+      <td>0.09</td>
+      <td>0.13</td>
       <td>0.17</td>
+      <td>0.2</td>
       <td>0.27</td>
-      <td>1.34</td>
-      <td>2.84</td>
-      <td>4.37</td>
-      <td>5.46</td>
-      <td>5.46</td>
+      <td>0.44</td>
+      <td>3.91</td>
     </tr></tbody>
   </table>
 
   <!-- Throughput timeline -->
+  
+  <div class="section-title">Throughput Timeline (req/s per second)</div>
+  <div class="chart-box" style="margin-top:.25rem;">
+    
+    <div class="bar-row">
+      <div class="bar-label">0s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:91.12012380596617%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17075</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">1s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.39164309728373%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18625</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">2s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.34985858370244%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18055</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">3s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.21553978333957%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18592</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">4s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.83665083515662%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18521</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">5s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.23037515342334%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18220</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">6s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.79395912268531%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18513</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">7s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:95.6027536154544%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17915</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">8s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.74918618923101%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18692</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">9s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.47169005816745%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18640</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">10s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.97006243662949%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18546</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">11s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:95.3466033406265%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">17867</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">12s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.34985858370244%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18055</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">13s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.78328619456748%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18511</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">14s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.7758685095256%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18697</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">15s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:97.99882597790703%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18364</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">16s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.33294199263568%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18614</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">17s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:98.98073536474732%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18548</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">18s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.50461604141096%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18084</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">19s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18739</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">20s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.17284807086824%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18584</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">21s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.94129889535193%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18728</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">22s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.44500773787288%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18635</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">23s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.55707348311009%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18656</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">24s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.42366188163723%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18631</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">25s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:96.58999946635359%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18100</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">26s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:99.50370884252095%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">18646</div>
+    </div>
+    
+    <div class="bar-row">
+      <div class="bar-label">27s</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:16.79385239340413%;background:#26a69a;"></div>
+      </div>
+      <div class="bar-count">3147</div>
+    </div>
+    
+  </div>
   
 
   <!-- Error breakdown -->

@@ -1,4 +1,5 @@
 pub mod html;
+pub mod json;
 pub mod pdf;
 
 use anyhow::Result;
@@ -20,6 +21,7 @@ pub fn generate_report(
     output_path: &str,
 ) -> Result<()> {
     match format {
+        OutputFormat::Json => json::generate(groups, output_path),
         OutputFormat::Html => html::generate(groups, output_path),
         OutputFormat::Pdf  => pdf::generate(groups, output_path),
     }

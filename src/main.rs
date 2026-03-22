@@ -57,6 +57,7 @@ async fn main() -> Result<()> {
     }
 
     let fmt_name = match cfg.output_format {
+        config::OutputFormat::Json => "JSON",
         config::OutputFormat::Html => "HTML",
         config::OutputFormat::Pdf  => "PDF",
     };

@@ -124,6 +124,7 @@ impl RunConfig {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum OutputFormat {
+    Json,
     Html,
     Pdf,
 }
@@ -131,11 +132,16 @@ pub enum OutputFormat {
 impl OutputFormat {
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
-            "pdf" => OutputFormat::Pdf,
-            _ => OutputFormat::Html,
+            "html" => OutputFormat::Html,
+            "pdf"  => OutputFormat::Pdf,
+            _      => OutputFormat::Json,
         }
     }
     pub fn default_extension(&self) -> &str {
-        match self { OutputFormat::Html => "html", OutputFormat::Pdf => "pdf" }
+        match self {
+            OutputFormat::Json => "json",
+            OutputFormat::Html => "html",
+            OutputFormat::Pdf  => "pdf",
+        }
     }
 }

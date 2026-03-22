@@ -54,8 +54,9 @@ export default function GlobalConfig({ run, onChange }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Output Format">
-          <select className={sel} value={run.output_format ?? 'html'}
+          <select className={sel} value={run.output_format ?? 'json'}
             onChange={e => set('output_format', e.target.value)}>
+            <option value="json">JSON</option>
             <option value="html">HTML</option>
             <option value="pdf">PDF</option>
           </select>

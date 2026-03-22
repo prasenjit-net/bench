@@ -1,37 +1,58 @@
 {
+  "requests": {
+    "health": {
+      "headers": {
+        "Accept": "application/json"
+      },
+      "method": "GET",
+      "url": "http://localhost:3000/_health"
+    },
+    "hello": {
+      "headers": {
+        "Accept": "application/json"
+      },
+      "method": "GET",
+      "url": "http://localhost:3000/hello"
+    }
+  },
   "run": {
     "concurrency": 10,
-    "timeout_ms": 5000,
-    "output_format": "html",
-    "output": "report.html"
-  },
-  "requests": {
-    "hello": {
-      "url": "http://localhost:3000/hello",
-      "method": "GET",
-      "headers": { "Accept": "application/json" }
-    },
-    "health": {
-      "url": "http://localhost:3000/_health",
-      "method": "GET",
-      "headers": { "Accept": "application/json" }
-    }
+    "output": "report.json",
+    "output_format": "json",
+    "timeout_ms": 5000
   },
   "scenarios": [
     {
       "name": "Warm Up",
-      "run": { "concurrency": 2, "requests": 20 },
-      "steps": ["hello", "health"]
+      "run": {
+        "concurrency": 2,
+        "requests": 20000
+      },
+      "steps": [
+        "hello",
+        "health"
+      ]
     },
     {
       "name": "Steady State",
-      "run": { "requests": 200 },
-      "steps": ["hello", "health"]
+      "run": {
+        "requests": 200000
+      },
+      "steps": [
+        "hello",
+        "health"
+      ]
     },
     {
       "name": "Over Stress",
-      "run": { "concurrency": 50, "requests": 500 },
-      "steps": ["hello", "health"]
+      "run": {
+        "concurrency": 50,
+        "requests": 500000
+      },
+      "steps": [
+        "hello",
+        "health"
+      ]
     }
   ]
 }

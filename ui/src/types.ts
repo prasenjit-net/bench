@@ -40,7 +40,7 @@ export const emptyScenario = (): ScenarioRef => ({
 })
 
 export const emptyFile = (): ScenarioFile => ({
-  run: { concurrency: 10, timeout_ms: 5000, requests: 100, output_format: 'html', output: 'report.html' },
+  run: { concurrency: 10, timeout_ms: 5000, requests: 100, output_format: 'json', output: 'report.json' },
   requests: {},
   scenarios: [],
 })
