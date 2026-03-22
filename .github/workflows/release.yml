@@ -8,8 +8,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   BIN_NAME: bench
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  NODE_NO_WARNINGS: 1
 
 jobs:
   # ── Build the React UI once; share it across all platform jobs ──────────────
@@ -22,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: ui/package-lock.json
 
@@ -61,12 +59,12 @@ jobs:
 
           # ── macOS ──────────────────────────────────────────────────────────
           - target: x86_64-apple-darwin
-            os: macos-13          # last Intel GitHub runner
+            os: macos-latest      # Apple Silicon runner, cross-compiles to x86_64
             use_cross: false
             archive: tar.gz
 
           - target: aarch64-apple-darwin
-            os: macos-latest      # Apple Silicon runner
+            os: macos-latest      # Apple Silicon runner, native
             use_cross: false
             archive: tar.gz
 
@@ -78,7 +76,7 @@ jobs:
 
           - target: aarch64-pc-windows-msvc
             os: windows-latest
-            use_cross: false      # cargo cross-compiles MSVC → ARM natively
+            use_cross: false      # MSVC toolchain supports ARM cross-compile natively
             archive: zip
 
     steps:
@@ -129,31 +127,23 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       # ── Package ─────────────────────────────────────────────────────────────
-      - name: Set archive name (Unix)
-        if: matrix.archive == 'tar.gz'
-        shell: bash
-        run: |
-          echo "ARCHIVE=${{ env.BIN_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz" >> "$GITHUB_ENV"
-
-      - name: Set archive name (Windows)
-        if: matrix.archive == 'zip'
-        shell: bash
-        run: |
-          echo "ARCHIVE=${{ env.BIN_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.zip" >> "$GITHUB_ENV"
-
       - name: Package (tar.gz)
         if: matrix.archive == 'tar.gz'
         shell: bash
         run: |
-          BIN=target/${{ matrix.target }}/release/${{ env.BIN_NAME }}
+          ARCHIVE="${{ env.BIN_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
+          BIN="target/${{ matrix.target }}/release/${{ env.BIN_NAME }}"
           tar czf "$ARCHIVE" -C "$(dirname $BIN)" "$(basename $BIN)"
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
 
       - name: Package (zip)
         if: matrix.archive == 'zip'
         shell: pwsh
         run: |
+          $archive = "${{ env.BIN_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.zip"
           $bin = "target\${{ matrix.target }}\release\${{ env.BIN_NAME }}.exe"
-          Compress-Archive -Path $bin -DestinationPath "$env:ARCHIVE"
+          Compress-Archive -Path $bin -DestinationPath $archive
+          "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
