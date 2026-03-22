@@ -1,26 +1,72 @@
 {
   "run": {
     "concurrency": 10,
-    "duration_secs": 30,
     "timeout_ms": 5000,
     "output_format": "html",
     "output": "report.html"
   },
-  "scenario": {
-    "name": "Localhost API",
-    "steps": [
-      {
-        "name": "Hello",
-        "url": "http://localhost:3000/hello",
-        "method": "GET",
-        "headers": { "Accept": "application/json" }
+  "scenarios": [
+    {
+      "name": "Warm Up",
+      "run": {
+        "concurrency": 2,
+        "requests": 20000
       },
-      {
-        "name": "Health Check",
-        "url": "http://localhost:3000/_health",
-        "method": "GET",
-        "headers": { "Accept": "application/json" }
-      }
-    ]
-  }
+      "steps": [
+        {
+          "name": "Hello",
+          "url": "http://localhost:3000/hello",
+          "method": "GET",
+          "headers": { "Accept": "application/json" }
+        },
+        {
+          "name": "Health Check",
+          "url": "http://localhost:3000/_health",
+          "method": "GET",
+          "headers": { "Accept": "application/json" }
+        }
+      ]
+    },
+    {
+      "name": "Steady State",
+      "run": {
+        "requests": 200000
+      },
+      "steps": [
+        {
+          "name": "Hello",
+          "url": "http://localhost:3000/hello",
+          "method": "GET",
+          "headers": { "Accept": "application/json" }
+        },
+        {
+          "name": "Health Check",
+          "url": "http://localhost:3000/_health",
+          "method": "GET",
+          "headers": { "Accept": "application/json" }
+        }
+      ]
+    },
+    {
+      "name": "Over Stress",
+      "run": {
+        "concurrency": 50,
+        "requests": 50000
+      },
+      "steps": [
+        {
+          "name": "Hello",
+          "url": "http://localhost:3000/hello",
+          "method": "GET",
+          "headers": { "Accept": "application/json" }
+        },
+        {
+          "name": "Health Check",
+          "url": "http://localhost:3000/_health",
+          "method": "GET",
+          "headers": { "Accept": "application/json" }
+        }
+      ]
+    }
+  ]
 }

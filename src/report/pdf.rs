@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use chrono::Local;
 
+use crate::report::ScenarioGroup;
 use crate::stats::ScenarioResult;
 
 const PAGE_W: f32 = 210.0; // A4 mm
@@ -93,7 +94,7 @@ impl PdfPage {
     }
 }
 
-pub fn generate(results: &[ScenarioResult], output_path: &str) -> Result<()> {
+pub fn generate(groups: &[ScenarioGroup<'_>], output_path: &str) -> Result<()> {
     let (doc, page1, layer1) = PdfDocument::new(
         "HTTP Benchmark Report",
         Mm(PAGE_W),
@@ -119,19 +120,30 @@ pub fn generate(results: &[ScenarioResult], output_path: &str) -> Result<()> {
     page.newline_n(2);
 
     let now = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let total_steps: usize = groups.iter().map(|g| g.results.len()).sum();
     page.text(
-        &format!("Generated: {}   Scenarios: {}", now, results.len()),
-        MARGIN,
-        9.0,
-        false,
+        &format!("Generated: {}   Scenarios: {}   Steps: {}", now, groups.len(), total_steps),
+        MARGIN, 9.0, false,
     );
     page.newline_n(2);
     page.hline(MARGIN, PAGE_W - MARGIN);
     page.newline();
 
-    for result in results {
-        render_scenario(&mut page, result)?;
+    for group in groups {
+        // Scenario group heading
+        page.text(&format!("◆ {}", group.name), MARGIN, 14.0, true);
+        page.newline();
+        page.text(
+            &format!("  {}  ·  concurrency {}", group.run_desc, group.concurrency),
+            MARGIN, 8.0, false,
+        );
         page.newline_n(2);
+
+        for result in &group.results {
+            render_step(&mut page, result)?;
+            page.newline();
+        }
+
         page.hline(MARGIN, PAGE_W - MARGIN);
         page.newline();
     }
@@ -143,7 +155,7 @@ pub fn generate(results: &[ScenarioResult], output_path: &str) -> Result<()> {
     Ok(())
 }
 
-fn render_scenario(page: &mut PdfPage, r: &ScenarioResult) -> Result<()> {
+fn render_step(page: &mut PdfPage, r: &ScenarioResult) -> Result<()> {
     // Scenario heading
     page.text(&format!("▶  {}  [{}]", r.name, r.method), MARGIN, 13.0, true);
     page.newline_n(2);

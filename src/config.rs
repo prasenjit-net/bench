@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
-// ── Step (leaf HTTP request) ──────────────────────────────────────────────────
+// ── Step ──────────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Step {
@@ -14,60 +14,82 @@ pub struct Step {
     pub body: Option<String>,
 }
 
-fn default_method() -> String {
-    "GET".to_string()
-}
-
-// ── Scenario ──────────────────────────────────────────────────────────────────
-
-/// A scenario is a named, ordered list of HTTP steps executed sequentially.
-/// One execution = all steps run once in order.
-#[derive(Debug, Clone, Deserialize)]
-pub struct Scenario {
-    pub name: String,
-    pub steps: Vec<Step>,
-}
+fn default_method() -> String { "GET".to_string() }
 
 // ── Run parameters ────────────────────────────────────────────────────────────
 
-/// Controls how many times the scenario is executed and with what parallelism.
-///
-/// `concurrency` workers each run their share of total executions in parallel.
-/// Each worker executes the scenario sequentially (all steps, one by one).
+/// Controls how many times a scenario executes and with what parallelism.
+/// Specified globally and/or per-scenario (per-scenario overrides global).
 #[derive(Debug, Clone, Deserialize)]
 pub struct RunParams {
-    #[serde(default = "default_concurrency")]
-    pub concurrency: usize,
-    /// Run the scenario for this many seconds (mutually exclusive with `requests`).
+    pub concurrency: Option<usize>,
+    /// Run for this many seconds (mutually exclusive with `requests`).
     pub duration_secs: Option<u64>,
-    /// Run the scenario exactly this many times total (mutually exclusive with `duration_secs`).
+    /// Execute the scenario this many times total (mutually exclusive with `duration_secs`).
     pub requests: Option<u64>,
-    #[serde(default = "default_timeout_ms")]
-    pub timeout_ms: u64,
-    #[serde(default)]
+    pub timeout_ms: Option<u64>,
     pub output_format: Option<String>,
     pub output: Option<String>,
 }
 
-fn default_concurrency() -> usize { 10 }
-fn default_timeout_ms() -> u64 { 5000 }
+impl RunParams {
+    /// Merge: self fields take priority over `base` (global) fields.
+    pub fn merge_over(&self, base: &RunParams) -> RunParams {
+        RunParams {
+            concurrency:   self.concurrency.or(base.concurrency),
+            duration_secs: self.duration_secs.or(base.duration_secs),
+            requests:      self.requests.or(base.requests),
+            timeout_ms:    self.timeout_ms.or(base.timeout_ms),
+            output_format: self.output_format.clone().or(base.output_format.clone()),
+            output:        self.output.clone().or(base.output.clone()),
+        }
+    }
+
+    pub fn effective_concurrency(&self) -> usize { self.concurrency.unwrap_or(10) }
+    pub fn effective_timeout_ms(&self) -> u64    { self.timeout_ms.unwrap_or(5000) }
+}
+
+// ── Scenario ──────────────────────────────────────────────────────────────────
+
+/// A named, ordered list of HTTP steps.
+/// One execution = all steps run sequentially, exactly once.
+/// `run` is optional — if absent the global run config applies.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Scenario {
+    pub name: String,
+    /// Per-scenario run override (any field present overrides the global value).
+    pub run: Option<RunParams>,
+    pub steps: Vec<Step>,
+}
 
 // ── Top-level JSON file ───────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
 pub struct ScenarioFile {
-    pub run: RunParams,
-    pub scenario: Scenario,
+    /// Global run defaults — inherited by any scenario that omits its own `run`.
+    pub run: Option<RunParams>,
+    pub scenarios: Vec<Scenario>,
 }
 
 // ── Runtime config ────────────────────────────────────────────────────────────
 
 #[derive(Debug)]
 pub struct RunConfig {
-    pub scenario: Scenario,
-    pub run: RunParams,
+    pub scenarios: Vec<Scenario>,
+    /// Resolved global run defaults (used when a scenario has no `run` block).
+    pub global_run: RunParams,
     pub output_format: OutputFormat,
     pub output_path: String,
+}
+
+impl RunConfig {
+    /// Return the effective RunParams for a given scenario (scenario overrides global).
+    pub fn effective_run<'a>(&'a self, scenario: &'a Scenario) -> RunParams {
+        match &scenario.run {
+            Some(s_run) => s_run.merge_over(&self.global_run),
+            None        => self.global_run.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -84,9 +106,6 @@ impl OutputFormat {
         }
     }
     pub fn default_extension(&self) -> &str {
-        match self {
-            OutputFormat::Html => "html",
-            OutputFormat::Pdf => "pdf",
-        }
+        match self { OutputFormat::Html => "html", OutputFormat::Pdf => "pdf" }
     }
 }

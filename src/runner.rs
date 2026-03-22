@@ -10,14 +10,14 @@ use tokio::sync::Mutex;
 use crate::config::{RunParams, Scenario, Step};
 use crate::stats::{RequestOutcome, ScenarioResult};
 
-/// Run the scenario according to `run` parameters.
+/// Run the scenario with the given (already-resolved) run parameters.
 ///
 /// `concurrency` workers each execute the full scenario (all steps in order)
 /// for their share of total runs. Stats are collected per step name.
 pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioResult>> {
     let client = Arc::new(
         Client::builder()
-            .timeout(Duration::from_millis(run.timeout_ms))
+            .timeout(Duration::from_millis(run.effective_timeout_ms()))
             .use_rustls_tls()
             .build()?,
     );
@@ -57,8 +57,9 @@ pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioRes
 
     if let Some(total) = total_runs {
         // Distribute total runs evenly across workers
-        let chunk = (total + run.concurrency as u64 - 1) / run.concurrency as u64;
-        let tasks: Vec<_> = (0..run.concurrency)
+        let concurrency = run.effective_concurrency();
+        let chunk = (total + concurrency as u64 - 1) / concurrency as u64;
+        let tasks: Vec<_> = (0..concurrency)
             .map(|i| {
                 let client = Arc::clone(&client);
                 let outcomes = Arc::clone(&outcomes);
@@ -67,11 +68,10 @@ pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioRes
                 let worker_start = i as u64 * chunk;
                 let worker_end = (worker_start + chunk).min(total);
                 let count = worker_end.saturating_sub(worker_start);
-                let timeout_ms = run.timeout_ms;
 
                 tokio::spawn(async move {
                     for _ in 0..count {
-                        execute_steps_once(&steps, &client, &outcomes, start, timeout_ms).await;
+                        execute_steps_once(&steps, &client, &outcomes, start).await;
                         pb.inc(1);
                     }
                 })
@@ -80,21 +80,21 @@ pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioRes
         futures::future::join_all(tasks).await;
     } else {
         // Run until deadline
+        let concurrency = run.effective_concurrency();
         let deadline = start + duration_limit.unwrap();
-        let tasks: Vec<_> = (0..run.concurrency)
+        let tasks: Vec<_> = (0..concurrency)
             .map(|_| {
                 let client = Arc::clone(&client);
                 let outcomes = Arc::clone(&outcomes);
                 let pb = Arc::clone(&pb);
                 let steps = scenario.steps.clone();
-                let timeout_ms = run.timeout_ms;
 
                 tokio::spawn(async move {
                     loop {
                         if Instant::now() >= deadline {
                             break;
                         }
-                        execute_steps_once(&steps, &client, &outcomes, start, timeout_ms).await;
+                        execute_steps_once(&steps, &client, &outcomes, start).await;
                         pb.inc(1);
                     }
                 })
@@ -111,6 +111,7 @@ pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioRes
         .expect("all tasks completed")
         .into_inner();
 
+    let concurrency = run.effective_concurrency();
     let results = scenario
         .steps
         .iter()
@@ -120,7 +121,7 @@ pub async fn run(scenario: &Scenario, run: &RunParams) -> Result<Vec<ScenarioRes
                 &step.name,
                 &step.url,
                 &step.method.to_uppercase(),
-                run.concurrency,
+                concurrency,
                 step_outcomes,
                 elapsed,
             )
@@ -136,7 +137,6 @@ async fn execute_steps_once(
     client: &Client,
     outcomes: &Arc<Mutex<HashMap<String, Vec<RequestOutcome>>>>,
     start: Instant,
-    _timeout_ms: u64,
 ) {
     for step in steps {
         let outcome = fire_request(client, step, start).await;
