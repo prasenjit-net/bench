@@ -10,11 +10,13 @@ use crate::config::{OutputFormat, RunConfig, RunParams, Scenario, ScenarioFile, 
     about = "HTTP/REST API benchmarking tool",
     long_about = "Benchmark HTTP/REST APIs.\n\n\
                   Single-step mode:  bench --url <URL> [flags]\n\
-                  File mode:         bench --file scenarios.json\n\n\
-                  In file mode, define steps once in the top-level 'steps' map and\n\
-                  reference them by name inside each scenario. A global 'run' block\n\
-                  sets defaults; individual scenarios can override any run field.\n\
-                  Scenarios execute sequentially in order."
+                  File mode:         bench --file scenarios.json [override flags]\n\n\
+                  In file mode, CLI flags override the JSON global 'run' block.\n\
+                  The merge order (highest to lowest priority) is:\n\
+                    1. per-scenario 'run' block in the JSON\n\
+                    2. CLI flags (only those explicitly provided)\n\
+                    3. global 'run' block in the JSON\n\
+                    4. built-in defaults (concurrency=10, timeout=5000ms)"
 )]
 pub struct Cli {
     // ── File mode ─────────────────────────────────────────────────────────────
@@ -44,10 +46,10 @@ pub struct Cli {
     #[arg(long)]
     pub content_type: Option<String>,
 
-    // ── Run parameters ────────────────────────────────────────────────────────
+    // ── Run parameters (all optional so explicit-only overrides work in file mode) ──
     /// Concurrent workers [default: 10]
-    #[arg(long, short = 'c', default_value_t = 10)]
-    pub concurrency: usize,
+    #[arg(long, short = 'c')]
+    pub concurrency: Option<usize>,
 
     /// Run for this many seconds (mutually exclusive with --requests)
     #[arg(long, conflicts_with = "requests")]
@@ -58,17 +60,17 @@ pub struct Cli {
     pub requests: Option<u64>,
 
     /// Per-request timeout in milliseconds [default: 5000]
-    #[arg(long, default_value_t = 5000)]
-    pub timeout: u64,
+    #[arg(long)]
+    pub timeout: Option<u64>,
 
-    /// Scenario name [default: Benchmark]
+    /// Scenario name for single-step mode [default: Benchmark]
     #[arg(long, default_value = "Benchmark")]
     pub name: String,
 
     // ── Output ────────────────────────────────────────────────────────────────
     /// Output format: html or pdf [default: html]
-    #[arg(long, default_value = "html")]
-    pub output_format: String,
+    #[arg(long)]
+    pub output_format: Option<String>,
 
     /// Output file path
     #[arg(long, short = 'o')]
@@ -77,7 +79,16 @@ pub struct Cli {
 
 impl Cli {
     pub fn into_run_config(self) -> Result<RunConfig> {
-        let fmt = OutputFormat::from_str(&self.output_format);
+        // Build a RunParams from only the CLI flags the user explicitly provided.
+        // This is merged OVER the JSON global run (CLI wins, JSON fills gaps).
+        let cli_run = RunParams {
+            concurrency:   self.concurrency,
+            duration_secs: self.duration,
+            requests:      self.requests,
+            timeout_ms:    self.timeout,
+            output_format: self.output_format.clone(),
+            output:        self.output.clone(),
+        };
 
         if let Some(file_path) = self.file {
             let content = std::fs::read_to_string(&file_path)
@@ -89,10 +100,12 @@ impl Cli {
                 bail!("No scenarios defined in file");
             }
 
-            let global_run = sf.run.unwrap_or(RunParams {
+            // Priority: CLI flags > JSON global run > built-in defaults
+            let json_global = sf.run.unwrap_or(RunParams {
                 concurrency: None, duration_secs: None, requests: None,
                 timeout_ms: None, output_format: None, output: None,
             });
+            let global_run = cli_run.merge_over(&json_global);
 
             // Resolve ScenarioRef → Scenario (expand step name references)
             let mut scenarios: Vec<Scenario> = Vec::with_capacity(sf.scenarios.len());
@@ -109,6 +122,7 @@ impl Cli {
                         .map(|def| def.clone().into_step(step_name.clone()))
                 }).collect::<Result<Vec<Step>>>()?;
 
+                // Effective run: per-scenario > CLI-merged global
                 let eff = match &sref.run {
                     Some(s) => s.merge_over(&global_run),
                     None    => global_run.clone(),
@@ -124,14 +138,16 @@ impl Cli {
                 scenarios.push(Scenario { name: sref.name.clone(), run: sref.run.clone(), steps });
             }
 
-            let file_fmt = global_run.output_format.as_deref()
-                .map(OutputFormat::from_str).unwrap_or(fmt);
-            let default_out = format!("report.{}", file_fmt.default_extension());
-            let output_path = self.output.or(global_run.output.clone())
-                .unwrap_or(default_out);
+            // Resolve output format and path (CLI > JSON global > default)
+            let resolved_fmt = global_run.output_format.as_deref()
+                .map(OutputFormat::from_str)
+                .unwrap_or(OutputFormat::Html);
+            let default_out = format!("report.{}", resolved_fmt.default_extension());
+            let output_path = global_run.output.clone().unwrap_or(default_out);
 
-            Ok(RunConfig { scenarios, global_run, output_format: file_fmt, output_path })
+            Ok(RunConfig { scenarios, global_run, output_format: resolved_fmt, output_path })
         } else {
+            // Single-step mode: --duration or --requests required
             if self.duration.is_none() && self.requests.is_none() {
                 bail!("Either --duration or --requests must be specified");
             }
@@ -141,13 +157,16 @@ impl Cli {
                 headers.insert("content-type".to_string(), ct);
             }
 
+            let fmt = self.output_format.as_deref()
+                .map(OutputFormat::from_str)
+                .unwrap_or(OutputFormat::Html);
             let global_run = RunParams {
-                concurrency: Some(self.concurrency),
+                concurrency:   Some(self.concurrency.unwrap_or(10)),
                 duration_secs: self.duration,
-                requests: self.requests,
-                timeout_ms: Some(self.timeout),
-                output_format: Some(self.output_format.clone()),
-                output: None,
+                requests:      self.requests,
+                timeout_ms:    Some(self.timeout.unwrap_or(5000)),
+                output_format: self.output_format,
+                output:        None,
             };
             let scenario = Scenario {
                 name: self.name.clone(),
@@ -177,11 +196,10 @@ fn parse_header(h: &str) -> Result<(String, String)> {
 fn validate_run(r: &RunParams, ctx: &str) -> Result<()> {
     if r.duration_secs.is_none() && r.requests.is_none() {
         bail!("{ctx}: no run config — specify \"requests\" or \"duration_secs\" \
-               in the global \"run\" block or the scenario's own \"run\" block");
+               in the global \"run\" block, a scenario 'run' block, or via CLI flags");
     }
     if r.effective_concurrency() == 0 {
         bail!("{ctx}: concurrency must be >= 1");
     }
     Ok(())
 }
-
