@@ -1,0 +1,45 @@
+{
+  "run": {
+    "concurrency": 10,
+    "duration_secs": 30,
+    "timeout_ms": 5000,
+    "output_format": "html",
+    "output": "report.html"
+  },
+  "scenario": {
+    "name": "Localhost API Suite",
+    "mode": "sequential",
+    "steps": [
+      {
+        "name": "Warm-up",
+        "mode": "sequential",
+        "steps": [
+          {
+            "name": "Health Check",
+            "url": "http://localhost:3000/_health",
+            "method": "GET",
+            "headers": { "Accept": "application/json" }
+          }
+        ]
+      },
+      {
+        "name": "Main Load Tests",
+        "mode": "parallel",
+        "steps": [
+          {
+            "name": "Hello Endpoint",
+            "url": "http://localhost:3000/hello",
+            "method": "GET",
+            "headers": { "Accept": "application/json" }
+          },
+          {
+            "name": "Health Check",
+            "url": "http://localhost:3000/_health",
+            "method": "GET",
+            "headers": { "Accept": "application/json" }
+          }
+        ]
+      }
+    ]
+  }
+}

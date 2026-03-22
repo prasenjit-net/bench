@@ -2,19 +2,26 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use std::collections::HashMap;
 
-use crate::config::{OutputFormat, RunConfig, Scenario, ScenarioFile};
+use crate::config::{
+    ExecutionMode, GroupNode, OutputFormat, RequestNode, RunConfig, RunParams, ScenarioFile,
+    ScenarioNode,
+};
 
 #[derive(Parser, Debug)]
 #[command(
     name = "bench",
     about = "HTTP/REST API benchmarking tool",
-    long_about = "Benchmark HTTP/REST APIs from the command line or a JSON scenario file.\n\
-                  Single-API mode: provide --url and related flags.\n\
-                  File mode: provide --file pointing to a JSON scenario file."
+    long_about = "Benchmark HTTP/REST APIs from the command line or a JSON scenario file.\n\n\
+                  Single-API mode:  bench --url <URL> [flags]\n\
+                  File mode:        bench --file scenarios.json\n\n\
+                  In file mode the JSON describes a scenario tree where groups can be\n\
+                  'parallel' (all children run simultaneously) or 'sequential' (one by one).\n\
+                  Groups can be nested arbitrarily deep. Global run parameters (concurrency,\n\
+                  duration, timeout) are declared once under \"run\" and apply to every leaf."
 )]
 pub struct Cli {
     // ── File mode ──────────────────────────────────────────────────────────────
-    /// Path to a JSON scenario file (enables multi-scenario mode)
+    /// Path to a JSON scenario file (enables tree scenario mode)
     #[arg(long, short = 'f', value_name = "FILE", conflicts_with = "url")]
     pub file: Option<String>,
 
@@ -77,32 +84,25 @@ impl Cli {
             // ── File mode ──
             let content = std::fs::read_to_string(&file_path)
                 .with_context(|| format!("Failed to read scenario file: {file_path}"))?;
-            let scenario_file: ScenarioFile = serde_json::from_str(&content)
+            let sf: ScenarioFile = serde_json::from_str(&content)
                 .with_context(|| format!("Failed to parse scenario file: {file_path}"))?;
 
-            if scenario_file.scenarios.is_empty() {
-                bail!("Scenario file contains no scenarios");
-            }
+            validate_run_params(&sf.run)?;
+            validate_node(&sf.scenario)?;
 
-            for (i, s) in scenario_file.scenarios.iter().enumerate() {
-                validate_scenario(s, i)?;
-            }
-
-            let fmt = scenario_file
-                .global
+            let fmt = sf
+                .run
                 .output_format
                 .as_deref()
                 .map(OutputFormat::from_str)
                 .unwrap_or(format);
 
             let default_out = format!("report.{}", fmt.default_extension());
-            let output_path = self
-                .output
-                .or(scenario_file.global.output)
-                .unwrap_or(default_out);
+            let output_path = self.output.or(sf.run.output.clone()).unwrap_or(default_out);
 
             Ok(RunConfig {
-                scenarios: scenario_file.scenarios,
+                root: sf.scenario,
+                run_params: sf.run,
                 output_format: fmt,
                 output_path,
             })
@@ -124,23 +124,33 @@ impl Cli {
                 headers.insert("content-type".to_string(), ct);
             }
 
-            let scenario = Scenario {
-                name: self.name,
-                url,
-                method: self.method.to_uppercase(),
-                headers,
-                body: self.body,
+            let run_params = RunParams {
                 concurrency: self.concurrency,
                 duration_secs: self.duration,
                 requests: self.requests,
                 timeout_ms: self.timeout,
+                output_format: Some(self.output_format.clone()),
+                output: None,
             };
+
+            let root = ScenarioNode::Group(GroupNode {
+                name: self.name.clone(),
+                mode: ExecutionMode::Sequential,
+                steps: vec![ScenarioNode::Request(RequestNode {
+                    name: self.name,
+                    url,
+                    method: self.method.to_uppercase(),
+                    headers,
+                    body: self.body,
+                })],
+            });
 
             let default_out = format!("report.{}", format.default_extension());
             let output_path = self.output.unwrap_or(default_out);
 
             Ok(RunConfig {
-                scenarios: vec![scenario],
+                root,
+                run_params,
                 output_format: format,
                 output_path,
             })
@@ -157,18 +167,33 @@ fn parse_header(h: &str) -> Result<(String, String)> {
     Ok((key, value))
 }
 
-fn validate_scenario(s: &Scenario, idx: usize) -> Result<()> {
-    if s.url.is_empty() {
-        bail!("Scenario #{idx} has an empty URL");
+fn validate_run_params(r: &RunParams) -> Result<()> {
+    if r.duration_secs.is_none() && r.requests.is_none() {
+        bail!("\"run\" must specify either \"duration_secs\" or \"requests\"");
     }
-    if s.duration_secs.is_none() && s.requests.is_none() {
-        bail!(
-            "Scenario #{idx} ('{}') must specify either duration_secs or requests",
-            s.name
-        );
-    }
-    if s.concurrency == 0 {
-        bail!("Scenario #{idx} ('{}') concurrency must be >= 1", s.name);
+    if r.concurrency == 0 {
+        bail!("\"run.concurrency\" must be >= 1");
     }
     Ok(())
 }
+
+fn validate_node(node: &ScenarioNode) -> Result<()> {
+    match node {
+        ScenarioNode::Request(r) => {
+            if r.url.is_empty() {
+                bail!("Request '{}' has an empty URL", r.name);
+            }
+        }
+        ScenarioNode::Group(g) => {
+            if g.steps.is_empty() {
+                bail!("Group '{}' has no steps", g.name);
+            }
+            for step in &g.steps {
+                validate_node(step)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+

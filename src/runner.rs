@@ -1,3 +1,4 @@
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -7,42 +8,104 @@ use reqwest::Client;
 use tokio::sync::Mutex;
 use tokio::time::timeout;
 
-use crate::config::Scenario;
+use crate::config::{ExecutionMode, RunParams, Scenario, ScenarioNode};
 use crate::stats::{RequestOutcome, ScenarioResult};
+
+// ── Public recursive entry point ─────────────────────────────────────────────
+
+/// Recursively execute a scenario tree node using `run` as global parameters.
+/// Sequential groups run their children one after the other;
+/// parallel groups run all children concurrently and wait for all to finish.
+/// Returns results in execution order (parallel children ordered by their position).
+pub fn execute_node<'a>(
+    node: &'a ScenarioNode,
+    run: &'a RunParams,
+    depth: usize,
+) -> Pin<Box<dyn std::future::Future<Output = Result<Vec<ScenarioResult>>> + Send + 'a>> {
+    Box::pin(async move {
+        match node {
+            ScenarioNode::Request(req) => {
+                let scenario = req.clone().into_scenario(run);
+                let result = run_scenario(&scenario).await?;
+                Ok(vec![result])
+            }
+
+            ScenarioNode::Group(group) => {
+                let indent = "  ".repeat(depth);
+                match group.mode {
+                    ExecutionMode::Sequential => {
+                        println!(
+                            "{}▶ [sequential] {}  ({} step(s))",
+                            indent,
+                            group.name,
+                            group.steps.len()
+                        );
+                        let mut results = Vec::new();
+                        for step in &group.steps {
+                            let mut r = execute_node(step, run, depth + 1).await?;
+                            results.append(&mut r);
+                        }
+                        Ok(results)
+                    }
+                    ExecutionMode::Parallel => {
+                        println!(
+                            "{}▶ [parallel]   {}  ({} step(s) running concurrently)",
+                            indent,
+                            group.name,
+                            group.steps.len()
+                        );
+                        let futures: Vec<_> = group
+                            .steps
+                            .iter()
+                            .map(|step| execute_node(step, run, depth + 1))
+                            .collect();
+                        let all = futures::future::join_all(futures).await;
+                        let mut results = Vec::new();
+                        for r in all {
+                            results.extend(r?);
+                        }
+                        Ok(results)
+                    }
+                }
+            }
+        }
+    })
+}
+
+// ── Single scenario runner ────────────────────────────────────────────────────
 
 pub async fn run_scenario(scenario: &Scenario) -> Result<ScenarioResult> {
     let client = Client::builder()
         .timeout(Duration::from_millis(scenario.timeout_ms))
-        .danger_accept_invalid_certs(false)
         .use_rustls_tls()
         .build()?;
 
     let client = Arc::new(client);
     let outcomes: Arc<Mutex<Vec<RequestOutcome>>> = Arc::new(Mutex::new(Vec::new()));
 
-    // Determine total request count (for progress bar)
     let total_requests = scenario.requests;
     let duration_limit = scenario.duration_secs.map(Duration::from_secs);
 
-    // Setup progress bar
     let pb = if let Some(n) = total_requests {
         let pb = ProgressBar::new(n);
         pb.set_style(
             ProgressStyle::with_template(
-                "{msg} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} req/s: {per_sec}",
+                "    {msg} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({per_sec})",
             )
             .unwrap()
             .progress_chars("=>-"),
         );
-        pb.set_message(format!("[{}]", scenario.name));
+        pb.set_message(format!("{} {}", scenario.method, scenario.url));
         pb
     } else {
         let pb = ProgressBar::new_spinner();
         pb.set_style(
-            ProgressStyle::with_template("{msg} [{elapsed_precise}] {spinner} {pos} requests sent")
-                .unwrap(),
+            ProgressStyle::with_template(
+                "    {msg} [{elapsed_precise}] {spinner} {pos} sent ({per_sec})",
+            )
+            .unwrap(),
         );
-        pb.set_message(format!("[{}]", scenario.name));
+        pb.set_message(format!("{} {}", scenario.method, scenario.url));
         pb
     };
     let pb = Arc::new(pb);
@@ -50,9 +113,7 @@ pub async fn run_scenario(scenario: &Scenario) -> Result<ScenarioResult> {
     let start_time = Instant::now();
 
     if let Some(total) = total_requests {
-        // Count-based mode: distribute `total` requests across `concurrency` workers
         let chunk = (total + scenario.concurrency as u64 - 1) / scenario.concurrency as u64;
-
         let tasks: Vec<_> = (0..scenario.concurrency)
             .map(|worker_idx| {
                 let client = Arc::clone(&client);
@@ -61,27 +122,20 @@ pub async fn run_scenario(scenario: &Scenario) -> Result<ScenarioResult> {
                 let scenario = scenario.clone();
                 let worker_start = worker_idx as u64 * chunk;
                 let worker_end = (worker_start + chunk).min(total);
-                let count = if worker_end > worker_start {
-                    worker_end - worker_start
-                } else {
-                    0
-                };
+                let count = worker_end.saturating_sub(worker_start);
 
                 tokio::spawn(async move {
                     for _ in 0..count {
-                        let outcome =
-                            execute_request(&client, &scenario, start_time).await;
+                        let outcome = execute_request(&client, &scenario, start_time).await;
                         pb.inc(1);
                         outcomes.lock().await.push(outcome);
                     }
                 })
             })
             .collect();
-
         futures::future::join_all(tasks).await;
     } else {
         let deadline = start_time + duration_limit.unwrap();
-
         let tasks: Vec<_> = (0..scenario.concurrency)
             .map(|_| {
                 let client = Arc::clone(&client);
@@ -94,41 +148,39 @@ pub async fn run_scenario(scenario: &Scenario) -> Result<ScenarioResult> {
                         if Instant::now() >= deadline {
                             break;
                         }
-                        let remaining = deadline.saturating_duration_since(Instant::now());
-                        if remaining.is_zero() {
-                            break;
-                        }
-                        let outcome =
-                            execute_request(&client, &scenario, start_time).await;
+                        let outcome = execute_request(&client, &scenario, start_time).await;
                         pb.inc(1);
                         outcomes.lock().await.push(outcome);
                     }
                 })
             })
             .collect();
-
         futures::future::join_all(tasks).await;
     }
 
-    pb.finish_with_message(format!("[{}] done", scenario.name));
+    pb.finish_and_clear();
 
     let total_duration = start_time.elapsed();
     let all_outcomes = Arc::try_unwrap(outcomes)
         .expect("all tasks done")
         .into_inner();
 
-    Ok(ScenarioResult::from_outcomes(
-        scenario,
-        all_outcomes,
-        total_duration,
-    ))
+    let result = ScenarioResult::from_outcomes(scenario, all_outcomes, total_duration);
+    println!(
+        "    ✓ {} — {:.1} req/s  success: {}  failed: {}  errors: {}  p99: {:.2}ms",
+        scenario.name,
+        result.throughput_rps,
+        result.successful_requests,
+        result.failed_requests,
+        result.error_requests,
+        result.latency_p99_ms,
+    );
+    Ok(result)
 }
 
-async fn execute_request(
-    client: &Client,
-    scenario: &Scenario,
-    start: Instant,
-) -> RequestOutcome {
+// ── Per-request execution ─────────────────────────────────────────────────────
+
+async fn execute_request(client: &Client, scenario: &Scenario, start: Instant) -> RequestOutcome {
     let req_start = Instant::now();
     let offset_ms = start.elapsed().as_millis() as u64;
 
@@ -146,17 +198,14 @@ async fn execute_request(
     }
 
     let result = timeout(
-        Duration::from_millis(scenario.timeout_ms + 100), // slight grace
+        Duration::from_millis(scenario.timeout_ms + 100),
         request.send(),
     )
     .await;
 
-    let latency_us = req_start.elapsed().as_micros() as u64;
-
     match result {
         Ok(Ok(response)) => {
             let status = response.status().as_u16();
-            // consume body to get accurate timing
             let _ = response.bytes().await;
             let latency_us = req_start.elapsed().as_micros() as u64;
             RequestOutcome {
@@ -168,24 +217,26 @@ async fn execute_request(
         }
         Ok(Err(e)) => {
             let msg = if e.is_timeout() {
-                "timeout".to_string()
+                "timeout"
             } else if e.is_connect() {
-                "connection error".to_string()
+                "connection error"
             } else {
-                "request error".to_string()
+                "request error"
             };
             RequestOutcome {
-                latency_us,
+                latency_us: req_start.elapsed().as_micros() as u64,
                 status_code: None,
-                error: Some(msg),
+                error: Some(msg.to_string()),
                 offset_ms,
             }
         }
         Err(_) => RequestOutcome {
-            latency_us,
+            latency_us: req_start.elapsed().as_micros() as u64,
             status_code: None,
             error: Some("timeout".to_string()),
             offset_ms,
         },
     }
 }
+
+
