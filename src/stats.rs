@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use hdrhistogram::Histogram;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Per-request outcome from the runner
 #[derive(Debug)]
@@ -17,7 +17,7 @@ pub struct RequestOutcome {
 }
 
 /// Aggregated statistics for one leaf request node across all iterations
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScenarioResult {
     pub name: String,
     pub url: String,

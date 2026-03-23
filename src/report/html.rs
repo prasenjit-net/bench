@@ -3,11 +3,7 @@ use anyhow::Result;
 use crate::report::ScenarioGroup;
 use crate::ui_assets::UiAssets;
 
-pub fn generate(groups: &[ScenarioGroup<'_>], output_path: &str) -> Result<()> {
-    // Build the report JSON to embed
-    let report_json = super::json::build_json_string(groups)?;
-
-    // Find the compiled JS and CSS bundles from the embedded assets
+fn bundle_html(report_json: &str, output_path: &str) -> Result<()> {
     let mut js_content = String::new();
     let mut css_content = String::new();
     for file in UiAssets::iter() {
@@ -50,4 +46,21 @@ pub fn generate(groups: &[ScenarioGroup<'_>], output_path: &str) -> Result<()> {
 
     std::fs::write(output_path, html)?;
     Ok(())
+}
+
+/// Generate HTML from in-memory benchmark results (used by --export during a run).
+#[allow(dead_code)]
+pub fn generate(groups: &[ScenarioGroup], output_path: &str) -> Result<()> {
+    let report_json = super::json::build_json_string(groups)?;
+    bundle_html(&report_json, output_path)
+}
+
+/// Generate HTML from an existing JSON report file.
+pub fn generate_from_json_file(json_path: &str, output_path: &str) -> Result<()> {
+    let report_json = std::fs::read_to_string(json_path)
+        .map_err(|e| anyhow::anyhow!("Cannot read report file '{}': {}", json_path, e))?;
+    // Validate it's valid JSON
+    let _: serde_json::Value = serde_json::from_str(&report_json)
+        .map_err(|e| anyhow::anyhow!("Invalid JSON in '{}': {}", json_path, e))?;
+    bundle_html(&report_json, output_path)
 }

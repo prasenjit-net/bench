@@ -9,7 +9,7 @@ mod ui_assets;
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Command};
-use report::{generate_report, ScenarioGroup};
+use report::ScenarioGroup;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -23,13 +23,19 @@ async fn main() -> Result<()> {
     }
 
     // ── report subcommand ──────────────────────────────────────────────────────
-    if let Command::Report { file } = args.command {
-        let path = std::path::PathBuf::from(file);
-        editor::run_report_viewer(path).await?;
+    if let Command::Report { file, export } = args.command {
+        if let Some(export_path) = export {
+            println!("📄 Exporting report → {export_path}");
+            report::export_report(&file, &export_path)?;
+            println!("✅ Export complete");
+        } else {
+            let path = std::path::PathBuf::from(file);
+            editor::run_report_viewer(path).await?;
+        }
         return Ok(());
     }
 
-    // ── run subcommand (default) ───────────────────────────────────────────────
+    // ── run subcommand ─────────────────────────────────────────────────────────
     let cfg = args.into_run_config()?;
 
     println!("\n🚀 bench — {} scenario(s)\n", cfg.scenarios.len());
@@ -61,34 +67,32 @@ async fn main() -> Result<()> {
         }
         println!();
 
-        groups.push(ScenarioGroup { name: &scenario.name, concurrency, run_desc, results });
+        groups.push(ScenarioGroup { name: scenario.name.clone(), concurrency, run_desc, results });
     }
-
-    let fmt_name = match cfg.output_format {
-        config::OutputFormat::Json => "JSON",
-        config::OutputFormat::Html => "HTML",
-        config::OutputFormat::Pdf  => "PDF",
-    };
-    println!("📄 Generating {fmt_name} report → {}", cfg.output_path);
-    generate_report(&groups, &cfg.output_format, &cfg.output_path)?;
 
     let total: u64 = groups.iter().flat_map(|g| g.results.iter()).map(|r| r.total_requests).sum();
     let ok: u64    = groups.iter().flat_map(|g| g.results.iter()).map(|r| r.successful_requests).sum();
     let err: u64   = groups.iter().flat_map(|g| g.results.iter()).map(|r| r.error_requests).sum();
-    println!("✅ Done!  {} scenario(s)  ·  {} total requests  ·  {} ok  ·  {} errors",
-        groups.len(), total, ok, err);
 
-    if cfg.open_report {
-        match cfg.output_format {
-            config::OutputFormat::Json => {
-                println!("\n🌐 Opening report in browser…");
-                let path = std::path::PathBuf::from(&cfg.output_path);
-                editor::run_report_viewer(path).await?;
-            }
-            _ => {
-                eprintln!("⚠️  --open is only supported for JSON reports. \
-                           Re-run with --output-format json to use this feature.");
-            }
+    if cfg.no_report {
+        println!("✅ Done!  {} scenario(s)  ·  {} total requests  ·  {} ok  ·  {} errors",
+            groups.len(), total, ok, err);
+    } else {
+        println!("📄 Generating JSON report → {}", cfg.json_output);
+        report::generate_json(&groups, &cfg.json_output)?;
+
+        if let Some(ref export_path) = cfg.export_path {
+            println!("📄 Exporting report → {export_path}");
+            report::export_report(&cfg.json_output, export_path)?;
+        }
+
+        println!("✅ Done!  {} scenario(s)  ·  {} total requests  ·  {} ok  ·  {} errors",
+            groups.len(), total, ok, err);
+
+        if cfg.open_report {
+            println!("\n🌐 Opening report in browser…");
+            let path = std::path::PathBuf::from(&cfg.json_output);
+            editor::run_report_viewer(path).await?;
         }
     }
 

@@ -299,7 +299,7 @@ fn draw_footer(ctx: &Ctx) {
 
 // ── Main entry point ──────────────────────────────────────────────────────────
 
-pub fn generate(groups: &[ScenarioGroup<'_>], output_path: &str) -> Result<()> {
+pub fn generate(groups: &[ScenarioGroup], output_path: &str) -> Result<()> {
     let (doc, page1, layer1) = PdfDocument::new("bench Report", Mm(PW), Mm(PH), "Page 1");
     let font = doc.add_builtin_font(BuiltinFont::Helvetica)?;
     let bold = doc.add_builtin_font(BuiltinFont::HelveticaBold)?;
@@ -313,7 +313,7 @@ pub fn generate(groups: &[ScenarioGroup<'_>], output_path: &str) -> Result<()> {
 
     for group in groups {
         ctx.ensure(40.0);
-        draw_group_header(&mut ctx, group.name, &group.run_desc, group.concurrency, group.results.len());
+        draw_group_header(&mut ctx, &group.name, &group.run_desc, group.concurrency, group.results.len());
 
         for result in &group.results {
             ctx.ensure(80.0);

@@ -122,8 +122,9 @@ bench run [OPTIONS]
 
 | Flag | Short | Description |
 |---|---|---|
-| `--output-format <FMT>` | | Report format: `json`, `html`, or `pdf` (default: `json`) |
-| `--output <FILE>` | `-o` | Output file path (default: `report.json`, `report.html`, or `report.pdf`) |
+| `--output <FILE>` | `-o` | JSON report output path (default: `report.json`) |
+| `--export <FILE>` | | Export to HTML or PDF after the run (format inferred from `.html`/`.pdf` extension) |
+| `--no-report` | | Skip writing any report file — print results to console only |
 | `--open` | | Open the JSON report in the browser after the benchmark completes |
 
 > **Note:** When using `--file`, CLI flags override the global `run` block in the JSON file.
@@ -153,8 +154,9 @@ bench report [OPTIONS]
 | Flag | Short | Description |
 |---|---|---|
 | `--file <FILE>` | `-f` | Path to a JSON report file (default: `report.json`) |
+| `--export <FILE>` | | Export to HTML or PDF instead of opening the browser (format inferred from `.html`/`.pdf` extension) |
 
-Starts a local web server, opens the report viewer in your default browser. Press **Ctrl+C** to stop.
+When `--export` is **not** provided: starts a local web server, opens the report viewer in your default browser. Press **Ctrl+C** to stop.
 
 ---
 
@@ -315,25 +317,28 @@ Each scenario is executed independently. Within one scenario execution, all step
 ## Report Formats
 
 ### JSON (default)
-Machine-readable report with full latency histogram, timeline, status/error distributions, and all percentiles.
+Machine-readable report with full latency histogram, timeline, status/error distributions, and all percentiles. Always written unless `--no-report` is used.
 
 ```sh
-bench run --file scenarios.json                       # report.json (default)
-bench run --file scenarios.json --output-format json
+bench run --file scenarios.json                          # report.json (default)
+bench run --file scenarios.json -o my-report.json        # custom JSON path
+bench run --file scenarios.json --no-report              # console output only
 ```
 
 ### HTML
 Self-contained, single `.html` file with the React report viewer embedded — works offline, no server required. Open it by double-clicking.
 
 ```sh
-bench run --file scenarios.json --output-format html
+bench run --file scenarios.json --export report.html          # run + export HTML
+bench report --file report.json --export report.html          # convert existing JSON to HTML
 ```
 
 ### PDF
 Professional PDF report with branded header, metric cards, latency tables, and color-coded bar charts.
 
 ```sh
-bench run --file scenarios.json --output-format pdf
+bench run --file scenarios.json --export report.pdf           # run + export PDF
+bench report --file report.json --export report.pdf           # convert existing JSON to PDF
 ```
 
 ### Interactive viewer (JSON reports)

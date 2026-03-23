@@ -38,6 +38,8 @@ impl RequestDef {
 
 /// Controls how many times a scenario executes and with what parallelism.
 /// Specified globally and/or per-scenario (per-scenario overrides global).
+/// Output-related fields (output_format, output) are intentionally absent —
+/// they are CLI concerns, not run-plan concerns.
 #[derive(Debug, Clone, Deserialize)]
 pub struct RunParams {
     pub concurrency: Option<usize>,
@@ -46,7 +48,12 @@ pub struct RunParams {
     /// Execute the scenario this many times total (mutually exclusive with `duration_secs`).
     pub requests: Option<u64>,
     pub timeout_ms: Option<u64>,
+    // Legacy fields — silently ignored if present in JSON files
+    #[serde(default)]
+    #[allow(dead_code)]
     pub output_format: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
     pub output: Option<String>,
 }
 
@@ -58,8 +65,8 @@ impl RunParams {
             duration_secs: self.duration_secs.or(base.duration_secs),
             requests:      self.requests.or(base.requests),
             timeout_ms:    self.timeout_ms.or(base.timeout_ms),
-            output_format: self.output_format.clone().or(base.output_format.clone()),
-            output:        self.output.clone().or(base.output.clone()),
+            output_format: None,
+            output:        None,
         }
     }
 
@@ -108,9 +115,13 @@ pub struct RunConfig {
     pub scenarios: Vec<Scenario>,
     /// Resolved global run defaults (used when a scenario has no `run` block).
     pub global_run: RunParams,
-    pub output_format: OutputFormat,
-    pub output_path: String,
-    /// If true, open the report in the browser after generation.
+    /// Path to write the JSON report (always generated unless `no_report` is true).
+    pub json_output: String,
+    /// If set, also export to HTML or PDF (inferred from extension).
+    pub export_path: Option<String>,
+    /// If true, skip writing any report file (console output only).
+    pub no_report: bool,
+    /// If true, open the JSON report in the browser after generation.
     pub open_report: bool,
 }
 
@@ -120,30 +131,6 @@ impl RunConfig {
         match &scenario.run {
             Some(s_run) => s_run.merge_over(&self.global_run),
             None        => self.global_run.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum OutputFormat {
-    Json,
-    Html,
-    Pdf,
-}
-
-impl OutputFormat {
-    pub fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
-            "html" => OutputFormat::Html,
-            "pdf"  => OutputFormat::Pdf,
-            _      => OutputFormat::Json,
-        }
-    }
-    pub fn default_extension(&self) -> &str {
-        match self {
-            OutputFormat::Json => "json",
-            OutputFormat::Html => "html",
-            OutputFormat::Pdf  => "pdf",
         }
     }
 }
